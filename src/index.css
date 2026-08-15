@@ -492,6 +492,106 @@ a {
   color: var(--bad);
 }
 
+.frac-prompt {
+  text-align: center;
+  font-weight: 700;
+  margin: 4px 0 8px;
+}
+
+.pizza-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 8px auto 16px;
+  max-width: min(100%, 420px);
+}
+
+.pizza-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.pizza {
+  width: 100%;
+  height: auto;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 240px;
+}
+
+.pizza-crust {
+  fill: #c9893a;
+}
+
+.pizza-slice {
+  fill: #fff;
+}
+
+.pizza-slice.on {
+  fill: #e85d4c;
+}
+
+.pizza-cut {
+  stroke: #6b3f1a;
+  stroke-width: 2.5;
+}
+
+.pizza-hub {
+  fill: #fff;
+  stroke: #6b3f1a;
+  stroke-width: 1.5;
+}
+
+.frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.frac > span:first-child {
+  border-bottom: 3px solid currentColor;
+  padding: 0 8px 2px;
+  min-width: 1.3em;
+  text-align: center;
+}
+
+.frac-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.frac-choice {
+  min-height: 72px;
+  font-size: 28px;
+}
+
+html[data-theme='dark'] .pizza-crust {
+  fill: #a56b28;
+}
+
+html[data-theme='dark'] .pizza-slice {
+  fill: #fff;
+}
+
+html[data-theme='dark'] .pizza-slice.on {
+  fill: #d24c3d;
+}
+
+html[data-theme='dark'] .pizza-cut,
+html[data-theme='dark'] .pizza-hub {
+  stroke: #3a2210;
+}
+
+html[data-theme='dark'] .pizza-hub {
+  fill: #fff;
+}
+
 .big-score {
   font-size: 48px;
   text-align: center;

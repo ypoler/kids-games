@@ -54,11 +54,15 @@ export type Player = {
   picture?: string
 }
 
-export type GameId = 'multiplication' | 'add-sub' | 'vocab-mc' | 'vocab-match'
+export type GameId = 'multiplication' | 'add-sub' | 'fractions' | 'vocab-mc' | 'vocab-match'
 
 export type AddMax = 10 | 20 | 30 | 40 | 100
 
 export const ADD_MAX_CHOICES: AddMax[] = [10, 20, 30, 40, 100]
+
+export type FracMax = 4 | 6 | 8 | 10 | 12
+
+export const FRAC_MAX_CHOICES: FracMax[] = [4, 6, 8, 10, 12]
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -93,6 +97,11 @@ export type AddSubSettings = {
   round: RoundGoal
 }
 
+export type FractionsSettings = {
+  max: FracMax
+  round: RoundGoal
+}
+
 /** Empty packIds = all groups. This sentinel = none selected. */
 export const PACKS_NONE = '__none__'
 
@@ -113,6 +122,7 @@ export function filterPacks<T extends { id: string }>(packs: T[], packIds: strin
 export type ChildGameSettings = {
   multiplication: MultiplicationSettings
   addSub: AddSubSettings
+  fractions: FractionsSettings
   vocabMc: VocabMcSettings
   vocabMatch: VocabMatchSettings
 }
@@ -141,6 +151,7 @@ export type ProfileProgress = {
     vocabMc: { bests: PersonalBests }
     vocabMatch: { bests: PersonalBests }
     addSub: { bests: PersonalBests }
+    fractions: { bests: PersonalBests }
   vocab: {
     words: Record<string, WordProgress>
   }
@@ -213,10 +224,15 @@ export function defaultAddSubSettings(): AddSubSettings {
   return { max: 20, round: defaultRound() }
 }
 
+export function defaultFractionsSettings(): FractionsSettings {
+  return { max: 10, round: defaultRound() }
+}
+
 export function defaultGameSettings(): ChildGameSettings {
   return {
     multiplication: defaultMultiplicationSettings(),
     addSub: defaultAddSubSettings(),
+    fractions: defaultFractionsSettings(),
     vocabMc: defaultVocabMcSettings(),
     vocabMatch: defaultVocabMatchSettings(),
   }
@@ -232,6 +248,7 @@ type RawGames = Partial<ChildGameSettings> & {
   vocabMc?: Partial<VocabMcSettings> & { timed?: boolean }
   vocabMatch?: Partial<VocabMatchSettings> & { timed?: boolean }
   addSub?: Partial<AddSubSettings>
+  fractions?: Partial<FractionsSettings>
 }
 
 function resolveRawGames(g: RawGames | undefined): ChildGameSettings {
@@ -265,6 +282,14 @@ function resolveRawGames(g: RawGames | undefined): ChildGameSettings {
       max: ADD_MAX_CHOICES.includes(g?.addSub?.max as AddMax) ? (g!.addSub!.max as AddMax) : 20,
       round: resolveRound(g?.addSub?.round),
     },
+    fractions: {
+      ...defaultFractionsSettings(),
+      ...g?.fractions,
+      max: FRAC_MAX_CHOICES.includes(g?.fractions?.max as FracMax)
+        ? (g!.fractions!.max as FracMax)
+        : 10,
+      round: resolveRound(g?.fractions?.round),
+    },
   }
 }
 
@@ -289,5 +314,6 @@ export function resolvedBests(progress: ProfileProgress, game: GameId): Personal
   }
   if (game === 'vocab-mc') return { ...defaultBests(), ...progress.vocabMc?.bests }
   if (game === 'add-sub') return { ...defaultBests(), ...progress.addSub?.bests }
+  if (game === 'fractions') return { ...defaultBests(), ...progress.fractions?.bests }
   return { ...defaultBests(), ...progress.vocabMatch?.bests }
 }

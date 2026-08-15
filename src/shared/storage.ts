@@ -20,6 +20,7 @@ function emptyProgress(): ProfileProgress {
     vocabMc: { bests: defaultBests() },
     vocabMatch: { bests: defaultBests() },
     addSub: { bests: defaultBests() },
+    fractions: { bests: defaultBests() },
     vocab: { words: {} },
   }
 }

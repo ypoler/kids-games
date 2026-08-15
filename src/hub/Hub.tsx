@@ -6,6 +6,7 @@ import { useActiveProfile } from '../shared/store'
 function lastLabel(last: string) {
   if (last === 'multiplication') return t.multiply
   if (last === 'add-sub') return t.addSub
+  if (last === 'fractions') return t.fractions
   if (last === 'vocab-match') return t.vocabMatch
   return t.vocabMc
 }
@@ -18,7 +19,9 @@ export function Hub() {
       ? '/play/multiplication'
       : last === 'add-sub'
         ? '/play/add-sub'
-        : last === 'vocab-match'
+        : last === 'fractions'
+          ? '/play/fractions'
+          : last === 'vocab-match'
           ? '/play/vocab-match'
           : last
             ? '/play/vocab-mc'
@@ -54,6 +57,15 @@ export function Hub() {
           <span className="tile-copy">
             <strong>{t.addSub}</strong>
             <span>{t.addSubHint}</span>
+          </span>
+        </Link>
+        <Link className="tile tap" to="/play/fractions">
+          <span className="tile-emoji" aria-hidden="true">
+            🍕
+          </span>
+          <span className="tile-copy">
+            <strong>{t.fractions}</strong>
+            <span>{t.fractionsHint}</span>
           </span>
         </Link>
         <Link className="tile tap" to="/play/vocab-mc">

@@ -44,6 +44,7 @@ type Store = {
   updateGameSettings: (patch: {
     multiplication?: Partial<ChildGameSettings['multiplication']>
     addSub?: Partial<ChildGameSettings['addSub']>
+    fractions?: Partial<ChildGameSettings['fractions']>
     vocabMc?: Partial<ChildGameSettings['vocabMc']>
     vocabMatch?: Partial<ChildGameSettings['vocabMatch']>
   }) => void
@@ -188,6 +189,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     (patch: {
       multiplication?: Partial<ChildGameSettings['multiplication']>
       addSub?: Partial<ChildGameSettings['addSub']>
+      fractions?: Partial<ChildGameSettings['fractions']>
       vocabMc?: Partial<ChildGameSettings['vocabMc']>
       vocabMatch?: Partial<ChildGameSettings['vocabMatch']>
     }) => {
@@ -198,6 +200,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           gameSettings: {
             multiplication: { ...cur.multiplication, ...patch.multiplication },
             addSub: { ...cur.addSub, ...patch.addSub },
+            fractions: { ...cur.fractions, ...patch.fractions },
             vocabMc: { ...cur.vocabMc, ...patch.vocabMc },
             vocabMatch: { ...cur.vocabMatch, ...patch.vocabMatch },
           },
@@ -347,6 +350,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             },
           }
         }
+        if (game === 'fractions') {
+          return {
+            ...s,
+            progress: {
+              ...s.progress,
+              [pid]: {
+                ...cur,
+                fractions: { bests: nextBests },
+              },
+            },
+          }
+        }
         return {
           ...s,
           progress: {
@@ -433,6 +448,7 @@ export function useActiveProfile() {
     general: state.general ?? defaultGeneral(),
     multiplication: games.multiplication,
     addSub: games.addSub,
+    fractions: games.fractions,
     vocabMc: games.vocabMc,
     vocabMatch: games.vocabMatch,
   }

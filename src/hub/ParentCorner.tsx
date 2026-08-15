@@ -11,8 +11,10 @@ import {
   isAllPacks,
   isNoPacks,
   ADD_MAX_CHOICES,
+  FRAC_MAX_CHOICES,
   type RoundGoal,
   type AddMax,
+  type FracMax,
 } from '../shared/types'
 
 export { ParentCorner as SettingsSheet }
@@ -32,7 +34,7 @@ export function ParentCorner({
 }) {
   const [tab, setTab] = useState<Tab>('general')
   const [gameTab, setGameTab] = useState<
-    'multiplication' | 'add-sub' | 'vocab-mc' | 'vocab-match'
+    'multiplication' | 'add-sub' | 'fractions' | 'vocab-mc' | 'vocab-match'
   >('multiplication')
   const { state, updateGeneral, updateGameSettings, resetProgress } = useStore()
   const games = resolvedGames(state)
@@ -123,6 +125,13 @@ export function ParentCorner({
             </button>
             <button
               type="button"
+              className={gameTab === 'fractions' ? 'tap chip on' : 'tap chip'}
+              onClick={() => setGameTab('fractions')}
+            >
+              {t.fractions}
+            </button>
+            <button
+              type="button"
               className={gameTab === 'vocab-mc' ? 'tap chip on' : 'tap chip'}
               onClick={() => setGameTab('vocab-mc')}
             >
@@ -152,6 +161,13 @@ export function ParentCorner({
               round={games.addSub.round}
               onMax={(max) => updateGameSettings({ addSub: { max } })}
               onRound={(round) => updateGameSettings({ addSub: { round } })}
+            />
+          ) : gameTab === 'fractions' ? (
+            <FractionsSettings
+              max={games.fractions.max}
+              round={games.fractions.round}
+              onMax={(max) => updateGameSettings({ fractions: { max } })}
+              onRound={(round) => updateGameSettings({ fractions: { round } })}
             />
           ) : gameTab === 'vocab-mc' ? (
             <VocabSettingsPanel
@@ -197,6 +213,37 @@ function AddSubSettings({
       <p className="label">{t.maxNumber}</p>
       <div className="chip-row">
         {ADD_MAX_CHOICES.map((n) => (
+          <button
+            key={n}
+            type="button"
+            className={max === n ? 'tap chip on' : 'tap chip'}
+            onClick={() => onMax(n)}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
+    </>
+  )
+}
+
+function FractionsSettings({
+  max,
+  round,
+  onMax,
+  onRound,
+}: {
+  max: FracMax
+  round: RoundGoal
+  onMax: (n: FracMax) => void
+  onRound: (r: RoundGoal) => void
+}) {
+  return (
+    <>
+      <RoundPicker round={round} onRound={onRound} />
+      <p className="label">{t.fracMaxSlices}</p>
+      <div className="chip-row">
+        {FRAC_MAX_CHOICES.map((n) => (
           <button
             key={n}
             type="button"
