@@ -1,0 +1,416 @@
+import { useState } from 'react'
+import { useVocabCatalog } from '../games/vocab/VocabCatalog'
+import type { VocabPack } from '../games/vocab/engine'
+import { IconClose } from '../shared/Icons'
+import { t } from '../shared/i18n'
+import { SHEETS_NOT_CONFIGURED } from '../shared/sheets'
+import { useStore } from '../shared/store'
+import {
+  defaultGameSettings,
+  resolvedGames,
+  PACKS_NONE,
+  isAllPacks,
+  isNoPacks,
+  type RoundGoal,
+} from '../shared/types'
+
+export { ParentCorner as SettingsSheet }
+
+function packQuery(s: string) {
+  return s.trim().toLowerCase()
+}
+
+type Tab = 'general' | 'child' | 'game'
+
+export function ParentCorner({
+  open,
+  onClose,
+}: {
+  open: boolean
+  onClose: () => void
+}) {
+  const [tab, setTab] = useState<Tab>('general')
+  const [gameTab, setGameTab] = useState<'multiplication' | 'vocab-mc' | 'vocab-match'>(
+    'multiplication',
+  )
+  const {
+    state,
+    updateGeneral,
+    updateGameSettings,
+    renamePlayer,
+    resetProgress,
+  } = useStore()
+
+  const [editId, setEditId] = useState<string | null>(state.currentPlayerId)
+  const playerId = editId && state.players.some((p) => p.id === editId)
+    ? editId
+    : state.currentPlayerId
+  const player = state.players.find((p) => p.id === playerId)
+  const games = playerId ? resolvedGames(state, playerId) : defaultGameSettings()
+  const { packs, ready } = useVocabCatalog()
+
+  if (!open) return null
+
+  return (
+    <div className="sheet" dir="rtl" role="dialog" aria-label={t.settings}>
+      <div className="sheet-bar">
+        <h2 className="sheet-title">{t.settings}</h2>
+        <button type="button" className="icon-btn" aria-label={t.close} onClick={onClose}>
+          <IconClose />
+        </button>
+      </div>
+
+      <div className="chip-row">
+        {(['general', 'child', 'game'] as const).map((id) => (
+          <button
+            key={id}
+            type="button"
+            className={tab === id ? 'tap chip on' : 'tap chip'}
+            onClick={() => setTab(id)}
+          >
+            {id === 'general' ? t.settingsGeneral : id === 'child' ? t.settingsChild : t.settingsGame}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'general' ? (
+        <>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={state.general.sound}
+              onChange={(e) => updateGeneral({ sound: e.target.checked })}
+            />
+            {t.sound}
+          </label>
+          <p className="muted">
+            {t.unpublished}: {state.outbox.length}
+          </p>
+          {SHEETS_NOT_CONFIGURED ? <p className="muted">{t.syncLater}</p> : null}
+        </>
+      ) : null}
+
+      {tab === 'child' ? (
+        <>
+          <ChildPicker
+            players={state.players}
+            selectedId={playerId}
+            onSelect={setEditId}
+          />
+          {player ? (
+            <>
+              <label className="field">
+                {t.askName}
+                <input
+                  className="text-input"
+                  defaultValue={player.name}
+                  key={player.id}
+                  onBlur={(e) => renamePlayer(player.id, e.target.value)}
+                />
+              </label>
+              <button
+                type="button"
+                className="tap danger"
+                onClick={() => resetProgress(player.id)}
+              >
+                {t.reset}
+              </button>
+            </>
+          ) : (
+            <p className="muted">{t.noChildYet}</p>
+          )}
+        </>
+      ) : null}
+
+      {tab === 'game' ? (
+        <>
+          <ChildPicker
+            players={state.players}
+            selectedId={playerId}
+            onSelect={setEditId}
+          />
+          {!player ? (
+            <p className="muted">{t.noChildYet}</p>
+          ) : (
+            <>
+              <div className="chip-row">
+                <button
+                  type="button"
+                  className={gameTab === 'multiplication' ? 'tap chip on' : 'tap chip'}
+                  onClick={() => setGameTab('multiplication')}
+                >
+                  {t.multiply}
+                </button>
+                <button
+                  type="button"
+                  className={gameTab === 'vocab-mc' ? 'tap chip on' : 'tap chip'}
+                  onClick={() => setGameTab('vocab-mc')}
+                >
+                  {t.vocabMc}
+                </button>
+                <button
+                  type="button"
+                  className={gameTab === 'vocab-match' ? 'tap chip on' : 'tap chip'}
+                  onClick={() => setGameTab('vocab-match')}
+                >
+                  {t.vocabMatch}
+                </button>
+              </div>
+
+              {gameTab === 'multiplication' ? (
+                <MultSettings
+                  missing={games.multiplication.missing}
+                  tables={games.multiplication.tables}
+                  round={games.multiplication.round}
+                  onMissing={(missing) => updateGameSettings(player.id, { multiplication: { missing } })}
+                  onTables={(tables) => updateGameSettings(player.id, { multiplication: { tables } })}
+                  onRound={(round) => updateGameSettings(player.id, { multiplication: { round } })}
+                />
+              ) : gameTab === 'vocab-mc' ? (
+                <VocabSettingsPanel
+                  packs={packs}
+                  loading={!ready}
+                  packIds={games.vocabMc.packIds}
+                  heToEn={games.vocabMc.heToEn}
+                  onPacks={(packIds) => updateGameSettings(player.id, { vocabMc: { packIds } })}
+                  onHeToEn={(heToEn) => updateGameSettings(player.id, { vocabMc: { heToEn } })}
+                  round={games.vocabMc.round}
+                  onRound={(round) => updateGameSettings(player.id, { vocabMc: { round } })}
+                />
+              ) : (
+                <VocabSettingsPanel
+                  packs={packs}
+                  loading={!ready}
+                  packIds={games.vocabMatch.packIds}
+                  onPacks={(packIds) => updateGameSettings(player.id, { vocabMatch: { packIds } })}
+                  round={games.vocabMatch.round}
+                  onRound={(round) => updateGameSettings(player.id, { vocabMatch: { round } })}
+                />
+              )}
+            </>
+          )}
+        </>
+      ) : null}
+    </div>
+  )
+}
+
+function ChildPicker({
+  players,
+  selectedId,
+  onSelect,
+}: {
+  players: { id: string; name: string }[]
+  selectedId: string | null
+  onSelect: (id: string) => void
+}) {
+  if (!players.length) return null
+  return (
+    <>
+      <p className="label">{t.settingsWhichChild}</p>
+      <div className="chip-row">
+        {players.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            className={p.id === selectedId ? 'tap chip on' : 'tap chip'}
+            onClick={() => onSelect(p.id)}
+          >
+            {p.name}
+          </button>
+        ))}
+      </div>
+    </>
+  )
+}
+
+function MultSettings({
+  missing,
+  tables,
+  round,
+  onMissing,
+  onTables,
+  onRound,
+}: {
+  missing: boolean
+  tables: number[]
+  round: RoundGoal
+  onMissing: (v: boolean) => void
+  onTables: (n: number[]) => void
+  onRound: (r: RoundGoal) => void
+}) {
+  return (
+    <>
+      <RoundPicker round={round} onRound={onRound} />
+      <label className="check">
+        <input type="checkbox" checked={missing} onChange={(e) => onMissing(e.target.checked)} />
+        {t.missing}
+      </label>
+      <p className="label">{t.tablesOn}</p>
+      <div className="chip-row">
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => {
+          const on = tables.includes(n)
+          return (
+            <button
+              key={n}
+              type="button"
+              className={on ? 'tap chip on' : 'tap chip'}
+              onClick={() => {
+                const next = on ? tables.filter((x) => x !== n) : [...tables, n].sort((a, b) => a - b)
+                onTables(next.length ? next : [2])
+              }}
+            >
+              {n}
+            </button>
+          )
+        })}
+      </div>
+    </>
+  )
+}
+
+function RoundPicker({ round, onRound }: { round: RoundGoal; onRound: (r: RoundGoal) => void }) {
+  const q5 = round.type === 'questions' && round.count === 5
+  const q10 = round.type === 'questions' && round.count === 10
+  const timed = round.type === 'timed'
+  return (
+    <>
+      <p className="label">{t.roundGoal}</p>
+      <div className="chip-row">
+        <button
+          type="button"
+          className={q5 ? 'tap chip on' : 'tap chip'}
+          onClick={() => onRound({ type: 'questions', count: 5 })}
+        >
+          {t.q5}
+        </button>
+        <button
+          type="button"
+          className={q10 ? 'tap chip on' : 'tap chip'}
+          onClick={() => onRound({ type: 'questions', count: 10 })}
+        >
+          {t.q10}
+        </button>
+        <button
+          type="button"
+          className={timed ? 'tap chip on' : 'tap chip'}
+          onClick={() => onRound({ type: 'timed' })}
+        >
+          {t.timed}
+        </button>
+      </div>
+    </>
+  )
+}
+
+function VocabSettingsPanel({
+  packs,
+  loading,
+  packIds,
+  heToEn,
+  round,
+  onPacks,
+  onHeToEn,
+  onRound,
+}: {
+  packs: VocabPack[]
+  loading: boolean
+  packIds: string[]
+  heToEn?: boolean
+  round: RoundGoal
+  onPacks: (ids: string[]) => void
+  onHeToEn?: (v: boolean) => void
+  onRound: (r: RoundGoal) => void
+}) {
+  const [q, setQ] = useState('')
+  const allOn = isAllPacks(packIds)
+  const noneOn = isNoPacks(packIds)
+  const needle = packQuery(q)
+  const visible = needle
+    ? packs.filter((p) => {
+        if (
+          packQuery(p.he).includes(needle) ||
+          packQuery(p.en).includes(needle) ||
+          packQuery(p.id).includes(needle)
+        ) {
+          return true
+        }
+        return p.words.some(
+          (w) => packQuery(w.en).includes(needle) || packQuery(w.he).includes(needle),
+        )
+      })
+    : packs
+  const selectedCount = allOn ? packs.length : noneOn ? 0 : packIds.filter((id) => id !== PACKS_NONE).length
+
+  function togglePack(id: string) {
+    const current = allOn ? packs.map((x) => x.id) : packIds.filter((x) => x !== PACKS_NONE)
+    const on = current.includes(id)
+    const next = on ? current.filter((x) => x !== id) : [...current, id]
+    if (next.length === 0) onPacks([PACKS_NONE])
+    else if (next.length === packs.length) onPacks([])
+    else onPacks(next)
+  }
+
+  return (
+    <>
+      {onHeToEn && heToEn !== undefined ? (
+        <label className="check">
+          <input type="checkbox" checked={heToEn} onChange={(e) => onHeToEn(e.target.checked)} />
+          {t.heToEn}
+        </label>
+      ) : null}
+      <RoundPicker round={round} onRound={onRound} />
+      <p className="label">{t.hiddenPacks}</p>
+      <p className="muted">{t.packsHint}</p>
+      {loading ? <p className="muted">{t.packsLoading}</p> : null}
+      <label className="field">
+        <span className="sr-only">{t.packSearch}</span>
+        <input
+          className="text-input"
+          type="search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder={t.packSearch}
+          autoComplete="off"
+          enterKeyHint="search"
+        />
+      </label>
+      <div className="chip-row pack-toolbar">
+        <button
+          type="button"
+          className={allOn ? 'tap chip on' : 'tap chip'}
+          onClick={() => onPacks(allOn ? [PACKS_NONE] : [])}
+        >
+          {t.packAll}
+        </button>
+        <span className="muted pack-count">
+          {allOn ? t.packAllOn : noneOn ? t.packNonePicked : `${selectedCount} / ${packs.length}`}
+        </span>
+      </div>
+      <div className="pack-list" role="list">
+        {visible.length === 0 ? (
+          <p className="muted">{t.packNone}</p>
+        ) : (
+          visible.map((p) => {
+            const on = allOn || packIds.includes(p.id)
+            return (
+              <button
+                key={p.id}
+                type="button"
+                role="listitem"
+                className={on ? 'tap pack-row on' : 'tap pack-row'}
+                onClick={() => togglePack(p.id)}
+                aria-pressed={on}
+              >
+                <span className="pack-row-text">
+                  <strong>{p.he}</strong>
+                  {p.en ? <span className="muted">{p.en}</span> : null}
+                </span>
+              </button>
+            )
+          })
+        )}
+      </div>
+    </>
+  )
+}
