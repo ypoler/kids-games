@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { SettingsSheet } from '../hub/ParentCorner'
 import { t } from './i18n'
 import { IconClose, IconCog, IconMenu } from './Icons'
+import { Who } from './Who'
 import { useActiveProfile, useStore } from './store'
 import type { ReactNode } from 'react'
 
@@ -35,7 +36,9 @@ export function AppChrome({ children }: { children: ReactNode }) {
         </button>
         <div className="app-bar-title">
           <strong>{title}</strong>
-          <span className="app-bar-who">{profile.name}</span>
+          <span className="app-bar-who">
+            <Who name={profile.name} picture={profile.picture} size="sm" />
+          </span>
         </div>
         {atHome ? (
           <span className="app-bar-slot" aria-hidden="true" />
@@ -57,7 +60,9 @@ export function AppChrome({ children }: { children: ReactNode }) {
         <div className="drawer-root">
           <button type="button" className="drawer-backdrop" aria-label={t.close} onClick={() => setMenu(false)} />
           <nav className="drawer" dir="rtl">
-            <p className="drawer-name">{profile.name}</p>
+            <p className="drawer-name">
+              <Who name={profile.name} picture={profile.picture} size="md" />
+            </p>
             <button
               type="button"
               className="tap drawer-item"

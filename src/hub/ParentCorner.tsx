@@ -4,6 +4,7 @@ import type { VocabPack } from '../games/vocab/engine'
 import { IconClose } from '../shared/Icons'
 import { t } from '../shared/i18n'
 import { SHEETS_NOT_CONFIGURED } from '../shared/sheets'
+import { Who } from '../shared/Who'
 import { useStore } from '../shared/store'
 import {
   defaultGameSettings,
@@ -200,7 +201,7 @@ function ChildPicker({
   selectedId,
   onSelect,
 }: {
-  players: { id: string; name: string }[]
+  players: { id: string; name: string; picture?: string }[]
   selectedId: string | null
   onSelect: (id: string) => void
 }) {
@@ -216,7 +217,7 @@ function ChildPicker({
             className={p.id === selectedId ? 'tap chip on' : 'tap chip'}
             onClick={() => onSelect(p.id)}
           >
-            {p.name}
+            <Who name={p.name} picture={p.picture} size="sm" />
           </button>
         ))}
       </div>

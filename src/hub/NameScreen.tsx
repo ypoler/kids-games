@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { t } from '../shared/i18n'
+import { Who } from '../shared/Who'
 import { useStore } from '../shared/store'
+import { GoogleSignIn } from './GoogleSignIn'
 
 export function NameScreen() {
   const { state, enterName, selectPlayer } = useStore()
@@ -13,7 +15,10 @@ export function NameScreen() {
 
   return (
     <div className="hub login" dir="rtl">
-      <h1 className="app-title">{t.appName}</h1>
+      <h1 className="app-title">
+        <Who name={t.appName} size="md" />
+      </h1>
+      <GoogleSignIn />
       <p className="label">{t.askName}</p>
       <form className="name-form" onSubmit={submit}>
         <input
@@ -34,7 +39,7 @@ export function NameScreen() {
           <div className="chip-row">
             {state.players.map((p) => (
               <button key={p.id} type="button" className="tap chip" onClick={() => selectPlayer(p.id)}>
-                {p.name}
+                <Who name={p.name} picture={p.picture} size="sm" />
               </button>
             ))}
           </div>

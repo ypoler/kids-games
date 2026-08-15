@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { t } from '../shared/i18n'
+import { Who } from '../shared/Who'
 import { useActiveProfile } from '../shared/store'
 
 function lastLabel(last: string) {
@@ -23,7 +24,9 @@ export function Hub() {
   return (
     <div className="hub" dir="rtl">
       <p className="hello">{t.hello}</p>
-      <h1 className="app-title tight">{profile.name}</h1>
+      <h1 className="app-title tight">
+        <Who name={profile.name} picture={profile.picture} size="md" />
+      </h1>
 
       {last && lastHref ? (
         <p className="muted">

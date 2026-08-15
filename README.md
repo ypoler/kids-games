@@ -4,7 +4,7 @@ Casual web games for two children (about 7 and 10): times tables to 10×10, and 
 
 Play on a recent iPad, Chrome OS Flex, or a phone as old as a Samsung S10. Add to Home Screen from the browser for a full-screen icon.
 
-If this device has no current player, the child is asked for their name. That name is saved locally. **זה לא אני** (hamburger) lets another child type or pick a saved name. Google sign-in is not used for play; it may come later only to publish scores to a Sheet.
+If this device has no current player, sign in with Google or type/pick a name. **זה לא אני** lets someone else sign in. Everyone who is signed in can open settings.
 
 Product decisions and remaining work: [PLAN.md](PLAN.md).
 
@@ -43,7 +43,7 @@ To try the production build locally: `npm run build && npm run preview`.
 
 ## Settings
 
-Open the hamburger for **הגדרות**: sound, per-game finish (5/10 questions or against the clock), tables or word groups, missing-number toggle, Hebrew→English toggle, reset progress. Google Sheet **score** sync is not enabled yet; finished rounds are queued locally for a later client-only Sheets publish.
+Open the hamburger for **הגדרות** (anyone who is signed in): sound, per-game finish, tables or word groups, missing-number toggle, Hebrew→English toggle, reset progress. Google Sheet **score** sync is not enabled yet.
 
 ## Stack
 

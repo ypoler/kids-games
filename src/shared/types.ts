@@ -49,6 +49,9 @@ export function withBest(bests: PersonalBests, round: RoundGoal, correct: number
 export type Player = {
   id: string
   name: string
+  googleSub?: string
+  email?: string
+  picture?: string
 }
 
 export type GameId = 'multiplication' | 'vocab-mc' | 'vocab-match'

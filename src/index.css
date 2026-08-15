@@ -252,11 +252,39 @@ a {
   margin-bottom: 16px;
 }
 
+.who {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.who-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-title .who {
+  justify-content: center;
+}
+
+.app-bar-who {
+  display: flex;
+  justify-content: center;
+}
+
+.drawer-name .who {
+  font: inherit;
+}
+
 .avatar {
   width: 56px;
   height: 56px;
   border-radius: 50%;
   object-fit: cover;
+  flex-shrink: 0;
+  background: var(--accent);
 }
 
 .avatar.sm {
@@ -637,6 +665,42 @@ a {
   padding: 8px 12px;
   border-radius: 10px;
   border: 2px solid var(--line);
+}
+
+.login .parent-google {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+  margin: 16px 0 20px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.parent-google-who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.parent-google-who .muted {
+  margin: 0;
+}
+
+.parent-google-pic {
+  border-radius: 50%;
+}
+
+.google-btn-host {
+  margin-top: 8px;
+  min-height: 44px;
+}
+
+.bad-inline {
+  color: var(--bad);
+  font-weight: 700;
 }
 
 .check {

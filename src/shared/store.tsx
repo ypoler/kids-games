@@ -2,11 +2,18 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react'
 import { makeSession } from './outbox'
+import {
+  readCachedGoogleIdentity,
+  setGoogleSignInHandler,
+  signOutGoogle,
+  type GoogleIdentity,
+} from './googleAuth'
 import { emptyProgress, ensurePlayer, loadState, saveState, uid } from './storage'
 import {
   colorForId,
@@ -32,6 +39,7 @@ type ActivePlayer = Player & { color: string }
 type Store = {
   state: AppState
   enterName: (name: string) => void
+  enterGoogle: (identity: GoogleIdentity) => void
   selectPlayer: (id: string) => void
   clearCurrent: () => void
   renamePlayer: (id: string, name: string) => void
@@ -90,6 +98,55 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [commit],
   )
 
+  const enterGoogle = useCallback(
+    (identity: GoogleIdentity) => {
+      commit((s) => {
+        const existing =
+          s.players.find((p) => p.googleSub === identity.sub) ??
+          s.players.find((p) => p.email === identity.email)
+        if (existing) {
+          return ensurePlayer(
+            {
+              ...s,
+              currentPlayerId: existing.id,
+              players: s.players.map((p) =>
+                p.id === existing.id
+                  ? {
+                      ...p,
+                      googleSub: identity.sub,
+                      email: identity.email,
+                      picture: identity.picture,
+                      name: p.name || identity.name,
+                    }
+                  : p,
+              ),
+            },
+            existing.id,
+          )
+        }
+        const id = identity.sub
+        return ensurePlayer(
+          {
+            ...s,
+            players: [
+              ...s.players,
+              {
+                id,
+                name: identity.name,
+                googleSub: identity.sub,
+                email: identity.email,
+                picture: identity.picture,
+              },
+            ],
+            currentPlayerId: id,
+          },
+          id,
+        )
+      })
+    },
+    [commit],
+  )
+
   const selectPlayer = useCallback(
     (id: string) => {
       commit((s) => ensurePlayer({ ...s, currentPlayerId: id }, id))
@@ -98,7 +155,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   )
 
   const clearCurrent = useCallback(() => {
-    commit((s) => ({ ...s, currentPlayerId: null }))
+    commit((s) => {
+      const email = s.players.find((p) => p.id === s.currentPlayerId)?.email
+      void signOutGoogle(email)
+      return { ...s, currentPlayerId: null }
+    })
   }, [commit])
 
   const renamePlayer = useCallback(
@@ -112,6 +173,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     [commit],
   )
+
+  useEffect(() => setGoogleSignInHandler(enterGoogle), [enterGoogle])
+
+  useEffect(() => {
+    const leftover = readCachedGoogleIdentity()
+    if (!leftover) return
+    if (loadState().currentPlayerId) return
+    enterGoogle(leftover)
+  }, [enterGoogle])
 
   const updateGeneral = useCallback(
     (patch: Partial<GeneralSettings>) => {
@@ -318,6 +388,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     () => ({
       state,
       enterName,
+      enterGoogle,
       selectPlayer,
       clearCurrent,
       renamePlayer,
@@ -334,6 +405,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [
       state,
       enterName,
+      enterGoogle,
       selectPlayer,
       clearCurrent,
       renamePlayer,
