@@ -84,6 +84,25 @@ export function ParentCorner({
             />
             {t.sound}
           </label>
+          <p className="label">{t.theme}</p>
+          <div className="chip-row">
+            {(
+              [
+                ['light', t.themeLight],
+                ['dark', t.themeDark],
+                ['system', t.themeSystem],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                className={state.general.theme === id ? 'tap chip on' : 'tap chip'}
+                onClick={() => updateGeneral({ theme: id })}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <p className="muted">
             {t.unpublished}: {state.outbox.length}
           </p>

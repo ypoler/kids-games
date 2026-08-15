@@ -45,6 +45,7 @@ export function loadState(): AppState {
     if (!parsed.outbox) parsed.outbox = []
     if (!parsed.players) parsed.players = []
     if (!parsed.general) parsed.general = defaultGeneral()
+    else parsed.general = { ...defaultGeneral(), ...parsed.general }
     if (!parsed.childSettings) parsed.childSettings = {}
     if (!parsed.gameSettings) parsed.gameSettings = {}
     return parsed

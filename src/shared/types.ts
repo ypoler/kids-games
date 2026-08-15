@@ -56,8 +56,11 @@ export type Player = {
 
 export type GameId = 'multiplication' | 'vocab-mc' | 'vocab-match'
 
+export type ThemeMode = 'light' | 'dark' | 'system'
+
 export type GeneralSettings = {
   sound: boolean
+  theme: ThemeMode
 }
 
 export type ChildSettings = {
@@ -176,7 +179,7 @@ export function normalizeName(name: string): string {
 }
 
 export function defaultGeneral(): GeneralSettings {
-  return { sound: true }
+  return { sound: true, theme: 'system' }
 }
 
 export function defaultChildSettings(): ChildSettings {

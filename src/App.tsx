@@ -6,6 +6,7 @@ import { VocabCatalogProvider } from './games/vocab/VocabCatalog'
 import { VocabMatchPage, VocabMcPage } from './games/vocab/VocabPage'
 import { AppChrome } from './shared/AppChrome'
 import { StoreProvider, useStore } from './shared/store'
+import { ThemeSync } from './shared/ThemeSync'
 import type { ReactNode } from 'react'
 
 function RequireName({ children }: { children: ReactNode }) {
@@ -17,6 +18,7 @@ function RequireName({ children }: { children: ReactNode }) {
 export default function App() {
   return (
     <StoreProvider>
+      <ThemeSync />
       <VocabCatalogProvider>
         <HashRouter>
           <RequireName>
