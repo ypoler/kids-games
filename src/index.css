@@ -672,6 +672,8 @@ a {
   padding-top: 0;
   margin-top: 0;
 }
+
+.parent-google {
   margin: 16px 0 20px;
   padding-top: 8px;
   border-top: 1px solid var(--line);
