@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Shell } from '../../shared/Shell'
 import { t } from '../../shared/i18n'
-import { playCorrect, playWrong } from '../../shared/sound'
+import { playCorrect, playWrong, speakEnglish, stopSpeak } from '../../shared/sound'
+import { SpeakWord } from '../../shared/SpeakWord'
 import { useActiveProfile, useStore } from '../../shared/store'
 import { AnswerMark, PlayScore, RecapScore, emptyScore, outboxStars, scoreCorrect, scoreWrong, type RunScore } from '../../shared/score'
 import { TIMED_MS } from '../../shared/TimerRing'
@@ -47,7 +48,7 @@ function VocabGame({ kind }: { kind: 'mc' | 'match' }) {
   const [score, setScore] = useState<RunScore>(emptyScore)
   const [runDone, setRunDone] = useState(false)
   const [pairs, setPairs] = useState<VocabWord[]>([])
-  const [pickedEn, setPickedEn] = useState<string | null>(null)
+  const [picked, setPicked] = useState<{ side: 'en' | 'he'; id: string } | null>(null)
   const [matched, setMatched] = useState<string[]>([])
   const [leftMs, setLeftMs] = useState(TIMED_MS)
   const startedAt = useRef(Date.now())
@@ -63,6 +64,13 @@ function VocabGame({ kind }: { kind: 'mc' | 'match' }) {
   useEffect(() => {
     setLastGame(gameId)
   }, [gameId, setLastGame])
+
+  useEffect(() => () => stopSpeak(), [])
+
+  useEffect(() => {
+    if (kind !== 'mc' || reverse || !word?.en || !started || runDone) return
+    speakEnglish(word.en, general.sound)
+  }, [kind, reverse, word?.id, word?.en, started, runDone, general.sound])
 
   const promptText = (w: VocabWord) => (reverse ? w.he : w.en)
   const answerText = (w: VocabWord) => (reverse ? w.en : w.he)
@@ -83,7 +91,7 @@ function VocabGame({ kind }: { kind: 'mc' | 'match' }) {
     setRunDone(false)
     setScore(emptyScore())
     setMatched([])
-    setPickedEn(null)
+    setPicked(null)
     if (kind === 'match') {
       setPairs(matchPairs(packWords, matchBoardSize(round, 0)))
     } else {
@@ -185,17 +193,20 @@ function VocabGame({ kind }: { kind: 'mc' | 'match' }) {
   const onMatchTap = (side: 'en' | 'he', id: string) => {
     if (runDone || matched.includes(id)) return
     if (side === 'en') {
-      setPickedEn(id)
+      const w = pairs.find((p) => p.id === id)
+      if (w) speakEnglish(w.en, general.sound)
+    }
+    if (!picked || picked.side === side) {
+      setPicked(picked?.side === side && picked.id === id ? null : { side, id })
       return
     }
-    if (!pickedEn) return
-    const ok = pickedEn === id
+    const ok = picked.id === id
     recordWord(id, ok)
     if (ok) {
       playCorrect(general.sound)
       const next = [...matched, id]
       setMatched(next)
-      setPickedEn(null)
+      setPicked(null)
       const nextScore = scoreCorrect(score)
       setScore(nextScore)
       const boardDone = next.length === pairs.length
@@ -208,11 +219,11 @@ function VocabGame({ kind }: { kind: 'mc' | 'match' }) {
       if (boardDone) {
         setPairs(matchPairs(packWords, matchBoardSize(round, nextScore.asked)))
         setMatched([])
-        setPickedEn(null)
+        setPicked(null)
       }
     } else {
       playWrong(general.sound)
-      setPickedEn(null)
+      setPicked(null)
       const nextScore = scoreWrong(score)
       setScore(nextScore)
       maybeFinish(nextScore.asked, nextScore.correct)
@@ -255,7 +266,12 @@ function VocabGame({ kind }: { kind: 'mc' | 'match' }) {
   }
 
   const hud = (
-    <PlayScore score={score} round={round} leftMs={leftMs} />
+    <PlayScore
+      score={kind === 'match' ? { asked: pairs.length, correct: matched.length } : score}
+      round={round}
+      leftMs={leftMs}
+      total={kind === 'match' ? pairs.length : undefined}
+    />
   )
 
   if (kind === 'match') {
@@ -265,21 +281,23 @@ function VocabGame({ kind }: { kind: 'mc' | 'match' }) {
         <div className="match-board">
           <div className="match-col" dir="ltr">
             {enOrder.map((w) => (
-              <button
-                key={w.id}
-                type="button"
-                className={
-                  matched.includes(w.id)
-                    ? 'tap match-item done'
-                    : pickedEn === w.id
-                      ? 'tap match-item on'
-                      : 'tap match-item'
-                }
-                disabled={matched.includes(w.id)}
-                onClick={() => onMatchTap('en', w.id)}
-              >
-                {w.en}
-              </button>
+              <div key={w.id} className="match-en-row">
+                <button
+                  type="button"
+                  className={
+                    matched.includes(w.id)
+                      ? 'tap match-item done'
+                      : picked?.side === 'en' && picked.id === w.id
+                        ? 'tap match-item on'
+                        : 'tap match-item'
+                  }
+                  disabled={matched.includes(w.id)}
+                  onClick={() => onMatchTap('en', w.id)}
+                >
+                  {w.en}
+                </button>
+                <SpeakWord text={w.en} />
+              </div>
             ))}
           </div>
           <div className="match-col">
@@ -287,7 +305,13 @@ function VocabGame({ kind }: { kind: 'mc' | 'match' }) {
               <button
                 key={w.id}
                 type="button"
-                className={matched.includes(w.id) ? 'tap match-item done' : 'tap match-item'}
+                className={
+                  matched.includes(w.id)
+                    ? 'tap match-item done'
+                    : picked?.side === 'he' && picked.id === w.id
+                      ? 'tap match-item on'
+                      : 'tap match-item'
+                }
                 disabled={matched.includes(w.id)}
                 onClick={() => onMatchTap('he', w.id)}
               >
@@ -303,26 +327,43 @@ function VocabGame({ kind }: { kind: 'mc' | 'match' }) {
   return (
     <Shell title={title} dir="rtl">
       {hud}
-      <p className="prompt" dir={reverse ? 'rtl' : 'ltr'}>
-        {word ? promptText(word) : ''}
-      </p>
+      <div className="prompt-with-speak">
+        <p className="prompt" dir={reverse ? 'rtl' : 'ltr'}>
+          {word ? promptText(word) : ''}
+        </p>
+        {word && !reverse ? <SpeakWord text={word.en} /> : null}
+      </div>
       {word?.transliteration && reverse ? (
         <p className="muted" dir="ltr">
           {word.transliteration}
         </p>
       ) : null}
       <div className="choice-col">
-        {opts.map((o) => (
-          <button
-            key={o}
-            type="button"
-            className="tap choice"
-            disabled={!!feedback}
-            onClick={() => onMc(o)}
-          >
-            {o}
-          </button>
-        ))}
+        {opts.map((o) =>
+          reverse ? (
+            <div key={o} className="choice-with-speak">
+              <button
+                type="button"
+                className="tap choice"
+                disabled={!!feedback}
+                onClick={() => onMc(o)}
+              >
+                {o}
+              </button>
+              <SpeakWord text={o} />
+            </div>
+          ) : (
+            <button
+              key={o}
+              type="button"
+              className="tap choice"
+              disabled={!!feedback}
+              onClick={() => onMc(o)}
+            >
+              {o}
+            </button>
+          ),
+        )}
       </div>
       {feedback === 'ok' ? <AnswerMark ok /> : null}
       {feedback === 'bad' && word ? (

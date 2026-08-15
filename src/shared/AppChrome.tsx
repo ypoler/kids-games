@@ -17,11 +17,13 @@ export function AppChrome({ children }: { children: ReactNode }) {
   const atHome = loc.pathname === '/'
   const title = loc.pathname.includes('multiplication')
     ? t.multiply
-    : loc.pathname.includes('vocab-match')
-      ? t.vocabMatch
-      : loc.pathname.includes('vocab')
-        ? t.vocabMc
-        : t.appName
+    : loc.pathname.includes('add-sub')
+      ? t.addSub
+      : loc.pathname.includes('vocab-match')
+        ? t.vocabMatch
+        : loc.pathname.includes('vocab')
+          ? t.vocabMc
+          : t.appName
 
   return (
     <div className="app-root" dir="rtl">

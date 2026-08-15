@@ -27,18 +27,20 @@ export function PlayScore({
   score,
   round,
   leftMs,
+  total,
 }: {
   score: RunScore
   round: RoundGoal
   leftMs: number
+  total?: number
 }) {
   const timed = round.type === 'timed'
-  const total = timed ? score.asked : round.count
+  const denom = total ?? (timed ? score.asked : round.count)
   return (
     <div className="play-status">
       {timed ? <TimerRing leftMs={leftMs} totalMs={TIMED_MS} /> : null}
       <p className="score-now" dir="ltr">
-        {score.correct} / {total}
+        {score.correct} / {denom}
       </p>
     </div>
   )

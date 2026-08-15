@@ -5,6 +5,7 @@ import { useActiveProfile } from '../shared/store'
 
 function lastLabel(last: string) {
   if (last === 'multiplication') return t.multiply
+  if (last === 'add-sub') return t.addSub
   if (last === 'vocab-match') return t.vocabMatch
   return t.vocabMc
 }
@@ -15,11 +16,13 @@ export function Hub() {
   const lastHref =
     last === 'multiplication'
       ? '/play/multiplication'
-      : last === 'vocab-match'
-        ? '/play/vocab-match'
-        : last
-          ? '/play/vocab-mc'
-          : null
+      : last === 'add-sub'
+        ? '/play/add-sub'
+        : last === 'vocab-match'
+          ? '/play/vocab-match'
+          : last
+            ? '/play/vocab-mc'
+            : null
 
   return (
     <div className="hub" dir="rtl">
@@ -42,6 +45,15 @@ export function Hub() {
           <span className="tile-copy">
             <strong>{t.multiply}</strong>
             <span>{t.multiplyHint}</span>
+          </span>
+        </Link>
+        <Link className="tile tap" to="/play/add-sub">
+          <span className="tile-emoji" aria-hidden="true">
+            ➕
+          </span>
+          <span className="tile-copy">
+            <strong>{t.addSub}</strong>
+            <span>{t.addSubHint}</span>
           </span>
         </Link>
         <Link className="tile tap" to="/play/vocab-mc">

@@ -40,3 +40,47 @@ export function playTap(enabled: boolean) {
   if (!enabled) return
   beep(440, 0.05)
 }
+
+export function canSpeakEnglish() {
+  return typeof window !== 'undefined' && 'speechSynthesis' in window
+}
+
+function englishVoice(): SpeechSynthesisVoice | undefined {
+  const voices = window.speechSynthesis.getVoices()
+  const en = voices.filter((v) => /^en([-_]|$)/i.test(v.lang))
+  return (
+    en.find((v) => /en-US/i.test(v.lang) && /google|samsung|android|chrome/i.test(v.name)) ??
+    en.find((v) => /en-US/i.test(v.lang)) ??
+    en[0]
+  )
+}
+
+export function speakEnglish(text: string, enabled = true) {
+  if (!enabled || !canSpeakEnglish()) return
+  const say = text.trim()
+  if (!say) return
+  const synth = window.speechSynthesis
+  const speak = () => {
+    const u = new SpeechSynthesisUtterance(say)
+    u.lang = 'en-US'
+    u.rate = 0.92
+    const voice = englishVoice()
+    if (voice) u.voice = voice
+    synth.cancel()
+    synth.speak(u)
+  }
+  if (synth.getVoices().length) speak()
+  else {
+    const once = () => {
+      synth.removeEventListener('voiceschanged', once)
+      speak()
+    }
+    synth.addEventListener('voiceschanged', once)
+    speak()
+  }
+}
+
+export function stopSpeak() {
+  if (!canSpeakEnglish()) return
+  window.speechSynthesis.cancel()
+}

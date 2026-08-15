@@ -4,15 +4,15 @@ import type { VocabPack } from '../games/vocab/engine'
 import { IconClose } from '../shared/Icons'
 import { t } from '../shared/i18n'
 import { SHEETS_NOT_CONFIGURED } from '../shared/sheets'
-import { Who } from '../shared/Who'
 import { useStore } from '../shared/store'
 import {
-  defaultGameSettings,
   resolvedGames,
   PACKS_NONE,
   isAllPacks,
   isNoPacks,
+  ADD_MAX_CHOICES,
   type RoundGoal,
+  type AddMax,
 } from '../shared/types'
 
 export { ParentCorner as SettingsSheet }
@@ -21,7 +21,7 @@ function packQuery(s: string) {
   return s.trim().toLowerCase()
 }
 
-type Tab = 'general' | 'child' | 'game'
+type Tab = 'general' | 'game'
 
 export function ParentCorner({
   open,
@@ -31,23 +31,12 @@ export function ParentCorner({
   onClose: () => void
 }) {
   const [tab, setTab] = useState<Tab>('general')
-  const [gameTab, setGameTab] = useState<'multiplication' | 'vocab-mc' | 'vocab-match'>(
-    'multiplication',
-  )
-  const {
-    state,
-    updateGeneral,
-    updateGameSettings,
-    renamePlayer,
-    resetProgress,
-  } = useStore()
-
-  const [editId, setEditId] = useState<string | null>(state.currentPlayerId)
-  const playerId = editId && state.players.some((p) => p.id === editId)
-    ? editId
-    : state.currentPlayerId
-  const player = state.players.find((p) => p.id === playerId)
-  const games = playerId ? resolvedGames(state, playerId) : defaultGameSettings()
+  const [gameTab, setGameTab] = useState<
+    'multiplication' | 'add-sub' | 'vocab-mc' | 'vocab-match'
+  >('multiplication')
+  const { state, updateGeneral, updateGameSettings, resetProgress } = useStore()
+  const games = resolvedGames(state)
+  const playerId = state.currentPlayerId
   const { packs, ready } = useVocabCatalog()
 
   if (!open) return null
@@ -62,14 +51,14 @@ export function ParentCorner({
       </div>
 
       <div className="chip-row">
-        {(['general', 'child', 'game'] as const).map((id) => (
+        {(['general', 'game'] as const).map((id) => (
           <button
             key={id}
             type="button"
             className={tab === id ? 'tap chip on' : 'tap chip'}
             onClick={() => setTab(id)}
           >
-            {id === 'general' ? t.settingsGeneral : id === 'child' ? t.settingsChild : t.settingsGame}
+            {id === 'general' ? t.settingsGeneral : t.settingsGame}
           </button>
         ))}
       </div>
@@ -103,6 +92,11 @@ export function ParentCorner({
               </button>
             ))}
           </div>
+          {playerId ? (
+            <button type="button" className="tap danger" onClick={() => resetProgress(playerId)}>
+              {t.reset}
+            </button>
+          ) : null}
           <p className="muted">
             {t.unpublished}: {state.outbox.length}
           </p>
@@ -110,104 +104,75 @@ export function ParentCorner({
         </>
       ) : null}
 
-      {tab === 'child' ? (
-        <>
-          <ChildPicker
-            players={state.players}
-            selectedId={playerId}
-            onSelect={setEditId}
-          />
-          {player ? (
-            <>
-              <label className="field">
-                {t.askName}
-                <input
-                  className="text-input"
-                  defaultValue={player.name}
-                  key={player.id}
-                  onBlur={(e) => renamePlayer(player.id, e.target.value)}
-                />
-              </label>
-              <button
-                type="button"
-                className="tap danger"
-                onClick={() => resetProgress(player.id)}
-              >
-                {t.reset}
-              </button>
-            </>
-          ) : (
-            <p className="muted">{t.noChildYet}</p>
-          )}
-        </>
-      ) : null}
-
       {tab === 'game' ? (
         <>
-          <ChildPicker
-            players={state.players}
-            selectedId={playerId}
-            onSelect={setEditId}
-          />
-          {!player ? (
-            <p className="muted">{t.noChildYet}</p>
-          ) : (
-            <>
-              <div className="chip-row">
-                <button
-                  type="button"
-                  className={gameTab === 'multiplication' ? 'tap chip on' : 'tap chip'}
-                  onClick={() => setGameTab('multiplication')}
-                >
-                  {t.multiply}
-                </button>
-                <button
-                  type="button"
-                  className={gameTab === 'vocab-mc' ? 'tap chip on' : 'tap chip'}
-                  onClick={() => setGameTab('vocab-mc')}
-                >
-                  {t.vocabMc}
-                </button>
-                <button
-                  type="button"
-                  className={gameTab === 'vocab-match' ? 'tap chip on' : 'tap chip'}
-                  onClick={() => setGameTab('vocab-match')}
-                >
-                  {t.vocabMatch}
-                </button>
-              </div>
+          <div className="chip-row">
+            <button
+              type="button"
+              className={gameTab === 'multiplication' ? 'tap chip on' : 'tap chip'}
+              onClick={() => setGameTab('multiplication')}
+            >
+              {t.multiply}
+            </button>
+            <button
+              type="button"
+              className={gameTab === 'add-sub' ? 'tap chip on' : 'tap chip'}
+              onClick={() => setGameTab('add-sub')}
+            >
+              {t.addSub}
+            </button>
+            <button
+              type="button"
+              className={gameTab === 'vocab-mc' ? 'tap chip on' : 'tap chip'}
+              onClick={() => setGameTab('vocab-mc')}
+            >
+              {t.vocabMc}
+            </button>
+            <button
+              type="button"
+              className={gameTab === 'vocab-match' ? 'tap chip on' : 'tap chip'}
+              onClick={() => setGameTab('vocab-match')}
+            >
+              {t.vocabMatch}
+            </button>
+          </div>
 
-              {gameTab === 'multiplication' ? (
-                <MultSettings
-                  missing={games.multiplication.missing}
-                  tables={games.multiplication.tables}
-                  round={games.multiplication.round}
-                  onMissing={(missing) => updateGameSettings(player.id, { multiplication: { missing } })}
-                  onTables={(tables) => updateGameSettings(player.id, { multiplication: { tables } })}
-                  onRound={(round) => updateGameSettings(player.id, { multiplication: { round } })}
-                />
-              ) : gameTab === 'vocab-mc' ? (
-                <VocabSettingsPanel
-                  packs={packs}
-                  loading={!ready}
-                  packIds={games.vocabMc.packIds}
-                  heToEn={games.vocabMc.heToEn}
-                  onPacks={(packIds) => updateGameSettings(player.id, { vocabMc: { packIds } })}
-                  onHeToEn={(heToEn) => updateGameSettings(player.id, { vocabMc: { heToEn } })}
-                  round={games.vocabMc.round}
-                  onRound={(round) => updateGameSettings(player.id, { vocabMc: { round } })}
-                />
-              ) : (
-                <VocabSettingsPanel
-                  packs={packs}
-                  loading={!ready}
-                  packIds={games.vocabMatch.packIds}
-                  onPacks={(packIds) => updateGameSettings(player.id, { vocabMatch: { packIds } })}
-                  round={games.vocabMatch.round}
-                  onRound={(round) => updateGameSettings(player.id, { vocabMatch: { round } })}
-                />
-              )}
-            </>
+          {gameTab === 'multiplication' ? (
+            <MultSettings
+              missing={games.multiplication.missing}
+              tables={games.multiplication.tables}
+              round={games.multiplication.round}
+              onMissing={(missing) => updateGameSettings({ multiplication: { missing } })}
+              onTables={(tables) => updateGameSettings({ multiplication: { tables } })}
+              onRound={(round) => updateGameSettings({ multiplication: { round } })}
+            />
+          ) : gameTab === 'add-sub' ? (
+            <AddSubSettings
+              max={games.addSub.max}
+              round={games.addSub.round}
+              onMax={(max) => updateGameSettings({ addSub: { max } })}
+              onRound={(round) => updateGameSettings({ addSub: { round } })}
+            />
+          ) : gameTab === 'vocab-mc' ? (
+            <VocabSettingsPanel
+              packs={packs}
+              loading={!ready}
+              packIds={games.vocabMc.packIds}
+              heToEn={games.vocabMc.heToEn}
+              onPacks={(packIds) => updateGameSettings({ vocabMc: { packIds } })}
+              onHeToEn={(heToEn) => updateGameSettings({ vocabMc: { heToEn } })}
+              round={games.vocabMc.round}
+              onRound={(round) => updateGameSettings({ vocabMc: { round } })}
+            />
+          ) : (
+            <VocabSettingsPanel
+              packs={packs}
+              loading={!ready}
+              packIds={games.vocabMatch.packIds}
+              onPacks={(packIds) => updateGameSettings({ vocabMatch: { packIds } })}
+              round={games.vocabMatch.round}
+              onRound={(round) => updateGameSettings({ vocabMatch: { round } })}
+            />
           )}
         </>
       ) : null}
@@ -215,28 +180,30 @@ export function ParentCorner({
   )
 }
 
-function ChildPicker({
-  players,
-  selectedId,
-  onSelect,
+function AddSubSettings({
+  max,
+  round,
+  onMax,
+  onRound,
 }: {
-  players: { id: string; name: string; picture?: string }[]
-  selectedId: string | null
-  onSelect: (id: string) => void
+  max: AddMax
+  round: RoundGoal
+  onMax: (n: AddMax) => void
+  onRound: (r: RoundGoal) => void
 }) {
-  if (!players.length) return null
   return (
     <>
-      <p className="label">{t.settingsWhichChild}</p>
+      <RoundPicker round={round} onRound={onRound} />
+      <p className="label">{t.maxNumber}</p>
       <div className="chip-row">
-        {players.map((p) => (
+        {ADD_MAX_CHOICES.map((n) => (
           <button
-            key={p.id}
+            key={n}
             type="button"
-            className={p.id === selectedId ? 'tap chip on' : 'tap chip'}
-            onClick={() => onSelect(p.id)}
+            className={max === n ? 'tap chip on' : 'tap chip'}
+            onClick={() => onMax(n)}
           >
-            <Who name={p.name} picture={p.picture} size="sm" />
+            {n}
           </button>
         ))}
       </div>

@@ -54,7 +54,11 @@ export type Player = {
   picture?: string
 }
 
-export type GameId = 'multiplication' | 'vocab-mc' | 'vocab-match'
+export type GameId = 'multiplication' | 'add-sub' | 'vocab-mc' | 'vocab-match'
+
+export type AddMax = 10 | 20 | 30 | 40 | 100
+
+export const ADD_MAX_CHOICES: AddMax[] = [10, 20, 30, 40, 100]
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -84,6 +88,11 @@ export type VocabMatchSettings = {
   round: RoundGoal
 }
 
+export type AddSubSettings = {
+  max: AddMax
+  round: RoundGoal
+}
+
 /** Empty packIds = all groups. This sentinel = none selected. */
 export const PACKS_NONE = '__none__'
 
@@ -103,6 +112,7 @@ export function filterPacks<T extends { id: string }>(packs: T[], packIds: strin
 
 export type ChildGameSettings = {
   multiplication: MultiplicationSettings
+  addSub: AddSubSettings
   vocabMc: VocabMcSettings
   vocabMatch: VocabMatchSettings
 }
@@ -128,8 +138,9 @@ export type ProfileProgress = {
     bests: PersonalBests
     bestTimed?: number
   }
-  vocabMc: { bests: PersonalBests }
-  vocabMatch: { bests: PersonalBests }
+    vocabMc: { bests: PersonalBests }
+    vocabMatch: { bests: PersonalBests }
+    addSub: { bests: PersonalBests }
   vocab: {
     words: Record<string, WordProgress>
   }
@@ -155,7 +166,7 @@ export type AppState = {
   currentPlayerId: string | null
   general: GeneralSettings
   childSettings: Record<string, ChildSettings>
-  gameSettings: Record<string, ChildGameSettings>
+  gameSettings: ChildGameSettings
   progress: Record<string, ProfileProgress>
   outbox: OutboxSession[]
 }
@@ -198,9 +209,14 @@ export function defaultVocabMatchSettings(): VocabMatchSettings {
   return { packIds: [], round: defaultRound() }
 }
 
+export function defaultAddSubSettings(): AddSubSettings {
+  return { max: 20, round: defaultRound() }
+}
+
 export function defaultGameSettings(): ChildGameSettings {
   return {
     multiplication: defaultMultiplicationSettings(),
+    addSub: defaultAddSubSettings(),
     vocabMc: defaultVocabMcSettings(),
     vocabMatch: defaultVocabMatchSettings(),
   }
@@ -210,45 +226,60 @@ export function resolvedChild(state: AppState, playerId: string): ChildSettings 
   return { ...defaultChildSettings(), ...state.childSettings[playerId] }
 }
 
-export function resolvedGames(state: AppState, playerId: string): ChildGameSettings {
-  const g = state.gameSettings[playerId] as
-    | (Partial<ChildGameSettings> & {
-        vocab?: { packIds?: string[]; heToEn?: boolean }
-        multiplication?: Partial<MultiplicationSettings> & { mode?: string; timed?: boolean }
-        vocabMc?: Partial<VocabMcSettings> & { timed?: boolean }
-        vocabMatch?: Partial<VocabMatchSettings> & { timed?: boolean }
-      })
-    | undefined
+type RawGames = Partial<ChildGameSettings> & {
+  vocab?: { packIds?: string[]; heToEn?: boolean }
+  multiplication?: Partial<MultiplicationSettings> & { mode?: string; timed?: boolean }
+  vocabMc?: Partial<VocabMcSettings> & { timed?: boolean }
+  vocabMatch?: Partial<VocabMatchSettings> & { timed?: boolean }
+  addSub?: Partial<AddSubSettings>
+}
+
+function resolveRawGames(g: RawGames | undefined): ChildGameSettings {
   const rawMult = g?.multiplication
   const { mode: _legacyMode, timed: _legacyTimed, ...multRest } = rawMult ?? {}
   const rawMode = String(rawMult?.mode ?? 'mix')
-  const childSession = state.childSettings[playerId]?.sessionLength
   const legacyPacks = g?.vocab?.packIds ?? []
   return {
     multiplication: {
       ...defaultMultiplicationSettings(),
       ...multRest,
       missing: rawMult?.missing ?? rawMode === 'missing',
-      round: resolveRound(
-        rawMult?.round,
-        Boolean(rawMult?.timed) || rawMode === 'timed',
-        childSession,
-      ),
+      round: resolveRound(rawMult?.round, Boolean(rawMult?.timed) || rawMode === 'timed'),
     },
     vocabMc: {
       ...defaultVocabMcSettings(),
       packIds: legacyPacks,
       heToEn: Boolean(g?.vocab?.heToEn),
       ...g?.vocabMc,
-      round: resolveRound(g?.vocabMc?.round, g?.vocabMc?.timed, childSession),
+      round: resolveRound(g?.vocabMc?.round, g?.vocabMc?.timed),
     },
     vocabMatch: {
       ...defaultVocabMatchSettings(),
       packIds: legacyPacks,
       ...g?.vocabMatch,
-      round: resolveRound(g?.vocabMatch?.round, g?.vocabMatch?.timed, childSession),
+      round: resolveRound(g?.vocabMatch?.round, g?.vocabMatch?.timed),
+    },
+    addSub: {
+      ...defaultAddSubSettings(),
+      ...g?.addSub,
+      max: ADD_MAX_CHOICES.includes(g?.addSub?.max as AddMax) ? (g!.addSub!.max as AddMax) : 20,
+      round: resolveRound(g?.addSub?.round),
     },
   }
+}
+
+export function coerceGameSettings(raw: unknown, currentPlayerId: string | null): ChildGameSettings {
+  if (!raw || typeof raw !== 'object') return defaultGameSettings()
+  const rec = raw as Record<string, unknown>
+  if (rec.multiplication && rec.vocabMc) return resolveRawGames(rec as RawGames)
+  const nested =
+    (currentPlayerId && rec[currentPlayerId]) ||
+    Object.values(rec).find((v) => v && typeof v === 'object' && 'multiplication' in v)
+  return resolveRawGames(nested as RawGames | undefined)
+}
+
+export function resolvedGames(state: AppState): ChildGameSettings {
+  return resolveRawGames(state.gameSettings)
 }
 
 export function resolvedBests(progress: ProfileProgress, game: GameId): PersonalBests {
@@ -257,5 +288,6 @@ export function resolvedBests(progress: ProfileProgress, game: GameId): Personal
     return { ...defaultBests(), ...b, timed: Math.max(b.timed ?? 0, progress.multiplication.bestTimed ?? 0) }
   }
   if (game === 'vocab-mc') return { ...defaultBests(), ...progress.vocabMc?.bests }
+  if (game === 'add-sub') return { ...defaultBests(), ...progress.addSub?.bests }
   return { ...defaultBests(), ...progress.vocabMatch?.bests }
 }

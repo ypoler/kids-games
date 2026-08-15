@@ -49,3 +49,12 @@ export function IconClose() {
     </Svg>
   )
 }
+
+export function IconSpeak() {
+  return (
+    <Svg>
+      <path d="M4 9v6h4l5 4V5L8 9H4z" />
+      <path d="M16 8.5a4 4 0 0 1 0 7" />
+    </Svg>
+  )
+}

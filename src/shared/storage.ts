@@ -1,6 +1,6 @@
 import {
+  coerceGameSettings,
   defaultBests,
-  defaultChildSettings,
   defaultGameSettings,
   defaultGeneral,
   type AppState,
@@ -19,6 +19,7 @@ function emptyProgress(): ProfileProgress {
     multiplication: { facts: {}, bests: defaultBests() },
     vocabMc: { bests: defaultBests() },
     vocabMatch: { bests: defaultBests() },
+    addSub: { bests: defaultBests() },
     vocab: { words: {} },
   }
 }
@@ -30,7 +31,7 @@ export function defaultState(): AppState {
     currentPlayerId: null,
     general: defaultGeneral(),
     childSettings: {},
-    gameSettings: {},
+    gameSettings: defaultGameSettings(),
     progress: {},
     outbox: [],
   }
@@ -47,7 +48,7 @@ export function loadState(): AppState {
     if (!parsed.general) parsed.general = defaultGeneral()
     else parsed.general = { ...defaultGeneral(), ...parsed.general }
     if (!parsed.childSettings) parsed.childSettings = {}
-    if (!parsed.gameSettings) parsed.gameSettings = {}
+    parsed.gameSettings = coerceGameSettings(parsed.gameSettings, parsed.currentPlayerId)
     return parsed
   } catch {
     return defaultState()
@@ -62,12 +63,6 @@ export function ensurePlayer(state: AppState, userId: string): AppState {
   let next = state
   if (!next.progress[userId]) {
     next = { ...next, progress: { ...next.progress, [userId]: emptyProgress() } }
-  }
-  if (!next.childSettings[userId]) {
-    next = { ...next, childSettings: { ...next.childSettings, [userId]: defaultChildSettings() } }
-  }
-  if (!next.gameSettings[userId]) {
-    next = { ...next, gameSettings: { ...next.gameSettings, [userId]: defaultGameSettings() } }
   }
   return next
 }

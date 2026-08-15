@@ -7,11 +7,7 @@ import { AnswerMark, PlayScore, RecapScore, emptyScore, outboxStars, scoreCorrec
 import { TIMED_MS } from '../../shared/TimerRing'
 import { useLeaveFlush } from '../../shared/useLeaveFlush'
 import { bestFor, resolvedBests } from '../../shared/types'
-import {
-  factKey,
-  nextFact,
-  type Fact,
-} from './engine'
+import { nextProblem, type ArithProblem } from './engine'
 
 function NumberPad({
   value,
@@ -46,25 +42,20 @@ function NumberPad({
   )
 }
 
-export function MultiplicationPage() {
-  const { recordFact, recordRoundBest, enqueueSession, setLastGame } = useStore()
-  const { profile, progress, general, multiplication } = useActiveProfile()
-  const round = multiplication.round
+export function AddSubPage() {
+  const { recordRoundBest, enqueueSession, setLastGame } = useStore()
+  const { profile, progress, general, addSub } = useActiveProfile()
+  const round = addSub.round
   const timed = round.type === 'timed'
-  const missing = multiplication.missing
-  const tablesForNext = multiplication.tables.length ? multiplication.tables : [2, 3, 4, 5]
+  const max = addSub.max
   const sessionLength = round.type === 'questions' ? round.count : 0
-  const modeLabel = missing ? 'missing' : 'mix'
 
   const [started, setStarted] = useState(false)
-  const [fact, setFact] = useState<Fact | null>(null)
-  const [missingSlot, setMissingSlot] = useState<'a' | 'b' | 'p'>('p')
+  const [problem, setProblem] = useState<ArithProblem | null>(null)
   const [answer, setAnswer] = useState('')
   const [feedback, setFeedback] = useState<'ok' | 'bad' | null>(null)
   const [score, setScore] = useState<RunScore>(emptyScore)
   const [runDone, setRunDone] = useState(false)
-  const consecOk = useRef(0)
-  const consecBad = useRef(0)
   const [leftMs, setLeftMs] = useState(TIMED_MS)
   const endsAt = useRef(0)
   const startedAt = useRef(Date.now())
@@ -76,13 +67,13 @@ export function MultiplicationPage() {
   const completeRound = (s: RunScore, durationSec: number) => {
     if (timedFlushed.current) return
     timedFlushed.current = true
-    prevBestRef.current = bestFor(resolvedBests(progress, 'multiplication'), round)
-    recordRoundBest('multiplication', round, s.correct)
+    prevBestRef.current = bestFor(resolvedBests(progress, 'add-sub'), round)
+    recordRoundBest('add-sub', round, s.correct)
     enqueueSession({
       player: profile.name,
-      game: 'multiplication',
-      mode: timed ? `${modeLabel}+timed` : modeLabel,
-      pack_or_tables: tablesForNext.join(','),
+      game: 'add-sub',
+      mode: timed ? 'mix+timed' : 'mix',
+      pack_or_tables: String(max),
       asked: s.asked,
       correct: s.correct,
       duration_sec: durationSec,
@@ -97,9 +88,9 @@ export function MultiplicationPage() {
     timedFlushed.current = true
     enqueueSession({
       player: profile.name,
-      game: 'multiplication',
-      mode: timed ? `${modeLabel}+timed` : modeLabel,
-      pack_or_tables: tablesForNext.join(','),
+      game: 'add-sub',
+      mode: timed ? 'mix+timed' : 'mix',
+      pack_or_tables: String(max),
       asked: s.asked,
       correct: s.correct,
       duration_sec: Math.round((Date.now() - startedAt.current) / 1000),
@@ -108,19 +99,14 @@ export function MultiplicationPage() {
   })
 
   useEffect(() => {
-    setLastGame('multiplication')
+    setLastGame('add-sub')
   }, [setLastGame])
 
-  const pick = useCallback(
-    (okStreak: number, badStreak: number) => {
-      const f = nextFact(tablesForNext, progress.multiplication.facts, okStreak, badStreak)
-      setFact(f)
-      setMissingSlot(missing ? (['a', 'b', 'p'] as const)[Math.floor(Math.random() * 3)]! : 'p')
-      setAnswer('')
-      setFeedback(null)
-    },
-    [missing, progress.multiplication.facts, tablesForNext],
-  )
+  const pick = useCallback((prev: ArithProblem | null) => {
+    setProblem(nextProblem(max, prev))
+    setAnswer('')
+    setFeedback(null)
+  }, [max])
 
   useEffect(() => {
     if (!started || !timed || runDone) return
@@ -156,14 +142,6 @@ export function MultiplicationPage() {
     return () => window.removeEventListener('keydown', onKey)
   }, [started, feedback, runDone])
 
-  const expected = fact
-    ? missingSlot === 'a'
-      ? fact.a
-      : missingSlot === 'b'
-        ? fact.b
-        : fact.product
-    : 0
-
   const finishIfNeeded = (nextAsked: number, nextCorrect: number) => {
     if (sessionLength > 0 && nextAsked >= sessionLength) {
       completeRound(
@@ -176,41 +154,35 @@ export function MultiplicationPage() {
 
   const submitRef = useRef(() => {})
   const submit = () => {
-    if (!fact || feedback) return
+    if (!problem || feedback) return
     const n = Number(answer)
     if (answer === '' || Number.isNaN(n)) return
-    const key = factKey(fact.a, fact.b)
-    const ok = n === expected
-    recordFact(key, ok)
+    const ok = n === problem.answer
     if (ok) {
       playCorrect(general.sound)
       setFeedback('ok')
       const next = scoreCorrect(score)
       setScore(next)
-      consecOk.current += 1
-      consecBad.current = 0
       window.setTimeout(() => {
         if (timed && leftMs <= 0) return
         finishIfNeeded(next.asked, next.correct)
         if (sessionLength > 0 && next.asked >= sessionLength) return
-        pick(consecOk.current, 0)
+        pick(problem)
       }, 650)
     } else {
       playWrong(general.sound)
       setFeedback('bad')
-      consecOk.current = 0
-      consecBad.current += 1
     }
   }
   submitRef.current = submit
 
   const afterMissContinue = () => {
-    if (!fact) return
+    if (!problem) return
     const next = scoreWrong(score)
     setScore(next)
     finishIfNeeded(next.asked, next.correct)
     if (sessionLength > 0 && next.asked >= sessionLength) return
-    pick(0, consecBad.current)
+    pick(problem)
   }
 
   const start = () => {
@@ -219,27 +191,18 @@ export function MultiplicationPage() {
     setStarted(true)
     setRunDone(false)
     setScore(emptyScore())
-    consecOk.current = 0
-    consecBad.current = 0
     endsAt.current = Date.now() + TIMED_MS
     setLeftMs(TIMED_MS)
-    pick(0, 0)
+    pick(null)
   }
 
   useEffect(() => {
     start()
   }, [])
 
-  const prompt = () => {
-    if (!fact) return ''
-    if (missingSlot === 'a') return `? × ${fact.b} = ${fact.product}`
-    if (missingSlot === 'b') return `${fact.a} × ? = ${fact.product}`
-    return `${fact.a} × ${fact.b} = ?`
-  }
-
-  if (!started || !fact) {
+  if (!started || !problem) {
     return (
-      <Shell title={t.multiply} dir="rtl">
+      <Shell title={t.addSub} dir="rtl">
         <p className="muted">{t.start}</p>
       </Shell>
     )
@@ -259,16 +222,16 @@ export function MultiplicationPage() {
   }
 
   return (
-    <Shell title={t.multiply} dir="ltr">
+    <Shell title={t.addSub} dir="ltr">
       <PlayScore score={score} round={round} leftMs={leftMs} />
       <p className="prompt" aria-live="polite">
-        {prompt()}
+        {problem.a} {problem.op} {problem.b} = ?
       </p>
       <p className="answer-box">{answer || ' '}</p>
       {feedback === 'ok' ? <AnswerMark ok /> : null}
       {feedback === 'bad' ? (
         <div>
-          <AnswerMark ok={false} hint={String(expected)} />
+          <AnswerMark ok={false} hint={String(problem.answer)} />
           <button type="button" className="tap primary" onClick={afterMissContinue}>
             {t.next}
           </button>

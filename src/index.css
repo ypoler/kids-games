@@ -407,6 +407,33 @@ a {
   margin: 12px 0;
 }
 
+.prompt-with-speak {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.prompt-with-speak .prompt {
+  margin: 12px 0;
+}
+
+.speak-btn {
+  color: var(--accent);
+}
+
+.choice-with-speak,
+.match-en-row {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.choice-with-speak .choice,
+.match-en-row .match-item {
+  flex: 1;
+}
+
 .answer-box {
   font-size: 36px;
   min-height: 48px;
@@ -682,6 +709,58 @@ a {
   border: 2px solid var(--line);
 }
 
+.hub.login {
+  max-width: 400px;
+}
+
+.login-lead {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 20px;
+}
+
+.login-or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.login-or::before,
+.login-or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.login-google,
+.google-btn-host {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  justify-content: center;
+}
+
+.login-saved {
+  margin-top: 28px;
+}
+
+.login-accounts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.login-account {
+  width: 100%;
+  justify-content: flex-start;
+}
+
 .login .parent-google {
   border-top: none;
   padding-top: 0;
@@ -708,11 +787,6 @@ a {
 
 .parent-google-pic {
   border-radius: 50%;
-}
-
-.google-btn-host {
-  margin-top: 8px;
-  min-height: 44px;
 }
 
 .bad-inline {

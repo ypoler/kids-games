@@ -9,7 +9,9 @@ export function GoogleSignIn() {
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || !btnRef.current) return
     let cancelled = false
-    renderGoogleButton(btnRef.current).catch(() => {
+    const el = btnRef.current
+    const width = Math.min(360, Math.floor(el.getBoundingClientRect().width) || 320)
+    renderGoogleButton(el, width).catch(() => {
       if (!cancelled) setError(t.googleError)
     })
     return () => {
@@ -17,13 +19,14 @@ export function GoogleSignIn() {
     }
   }, [])
 
+  if (!GOOGLE_CLIENT_ID) {
+    return <p className="muted">{t.googleMissingClient}</p>
+  }
+
   return (
-    <section className="parent-google">
-      <p className="label">{t.googleTitle}</p>
-      <p className="muted">{t.googleHint}</p>
-      {!GOOGLE_CLIENT_ID ? <p className="muted">{t.googleMissingClient}</p> : null}
-      {GOOGLE_CLIENT_ID ? <div className="google-btn-host" dir="ltr" ref={btnRef} /> : null}
+    <div className="login-google">
+      <div className="google-btn-host" dir="ltr" ref={btnRef} />
       {error ? <p className="bad-inline">{error}</p> : null}
-    </section>
+    </div>
   )
 }

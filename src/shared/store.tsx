@@ -17,16 +17,13 @@ import {
 import { emptyProgress, ensurePlayer, loadState, saveState, uid } from './storage'
 import {
   colorForId,
-  defaultChildSettings,
   defaultGeneral,
   normalizeName,
   resolvedBests,
-  resolvedChild,
   resolvedGames,
   withBest,
   type AppState,
   type ChildGameSettings,
-  type ChildSettings,
   type GeneralSettings,
   type GameId,
   type OutboxSession,
@@ -44,15 +41,12 @@ type Store = {
   clearCurrent: () => void
   renamePlayer: (id: string, name: string) => void
   updateGeneral: (patch: Partial<GeneralSettings>) => void
-  updateChildSettings: (playerId: string, patch: Partial<ChildSettings>) => void
-  updateGameSettings: (
-    playerId: string,
-    patch: {
-      multiplication?: Partial<ChildGameSettings['multiplication']>
-      vocabMc?: Partial<ChildGameSettings['vocabMc']>
-      vocabMatch?: Partial<ChildGameSettings['vocabMatch']>
-    },
-  ) => void
+  updateGameSettings: (patch: {
+    multiplication?: Partial<ChildGameSettings['multiplication']>
+    addSub?: Partial<ChildGameSettings['addSub']>
+    vocabMc?: Partial<ChildGameSettings['vocabMc']>
+    vocabMatch?: Partial<ChildGameSettings['vocabMatch']>
+  }) => void
   resetProgress: (userId: string) => void
   setLastGame: (game: GameId) => void
   recordFact: (key: string, correct: boolean) => void
@@ -190,39 +184,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [commit],
   )
 
-  const updateChildSettings = useCallback(
-    (playerId: string, patch: Partial<ChildSettings>) => {
-      commit((s) => {
-        const cur = s.childSettings[playerId] ?? defaultChildSettings()
-        return {
-          ...s,
-          childSettings: { ...s.childSettings, [playerId]: { ...cur, ...patch } },
-        }
-      })
-    },
-    [commit],
-  )
-
   const updateGameSettings = useCallback(
-    (
-      playerId: string,
-      patch: {
-        multiplication?: Partial<ChildGameSettings['multiplication']>
-        vocabMc?: Partial<ChildGameSettings['vocabMc']>
-        vocabMatch?: Partial<ChildGameSettings['vocabMatch']>
-      },
-    ) => {
+    (patch: {
+      multiplication?: Partial<ChildGameSettings['multiplication']>
+      addSub?: Partial<ChildGameSettings['addSub']>
+      vocabMc?: Partial<ChildGameSettings['vocabMc']>
+      vocabMatch?: Partial<ChildGameSettings['vocabMatch']>
+    }) => {
       commit((s) => {
-        const cur = resolvedGames(s, playerId)
+        const cur = resolvedGames(s)
         return {
           ...s,
           gameSettings: {
-            ...s.gameSettings,
-            [playerId]: {
-              multiplication: { ...cur.multiplication, ...patch.multiplication },
-              vocabMc: { ...cur.vocabMc, ...patch.vocabMc },
-              vocabMatch: { ...cur.vocabMatch, ...patch.vocabMatch },
-            },
+            multiplication: { ...cur.multiplication, ...patch.multiplication },
+            addSub: { ...cur.addSub, ...patch.addSub },
+            vocabMc: { ...cur.vocabMc, ...patch.vocabMc },
+            vocabMatch: { ...cur.vocabMatch, ...patch.vocabMatch },
           },
         }
       })
@@ -358,6 +335,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             },
           }
         }
+        if (game === 'add-sub') {
+          return {
+            ...s,
+            progress: {
+              ...s.progress,
+              [pid]: {
+                ...cur,
+                addSub: { bests: nextBests },
+              },
+            },
+          }
+        }
         return {
           ...s,
           progress: {
@@ -393,7 +382,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       clearCurrent,
       renamePlayer,
       updateGeneral,
-      updateChildSettings,
       updateGameSettings,
       resetProgress,
       setLastGame,
@@ -410,7 +398,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       clearCurrent,
       renamePlayer,
       updateGeneral,
-      updateChildSettings,
       updateGameSettings,
       resetProgress,
       setLastGame,
@@ -439,14 +426,13 @@ export function useActiveProfile() {
     color: colorForId(player.id),
   }
   const progress = state.progress[player.id] ?? emptyProgress()
-  const child = resolvedChild(state, player.id)
-  const games = resolvedGames(state, player.id)
+  const games = resolvedGames(state)
   return {
     profile,
     progress,
     general: state.general ?? defaultGeneral(),
-    child,
     multiplication: games.multiplication,
+    addSub: games.addSub,
     vocabMc: games.vocabMc,
     vocabMatch: games.vocabMatch,
   }

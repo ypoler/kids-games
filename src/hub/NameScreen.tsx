@@ -18,32 +18,45 @@ export function NameScreen() {
       <h1 className="app-title">
         <Who name={t.appName} size="md" />
       </h1>
-      <GoogleSignIn />
-      <p className="label">{t.askName}</p>
+      <p className="login-lead">{t.loginWelcome}</p>
+
       <form className="name-form" onSubmit={submit}>
-        <input
-          className="text-input"
-          autoComplete="nickname"
-          autoFocus
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder={t.namePlaceholder}
-        />
+        <label className="field">
+          {t.askName}
+          <input
+            className="text-input"
+            autoComplete="nickname"
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={t.namePlaceholder}
+          />
+        </label>
         <button type="submit" className="tap primary" disabled={!name.trim()}>
-          {t.start}
+          {t.loginContinue}
         </button>
       </form>
+
+      <p className="login-or">{t.loginOr}</p>
+
+      <GoogleSignIn />
+
       {state.players.length ? (
-        <>
+        <div className="login-saved">
           <p className="muted">{t.orPickSaved}</p>
-          <div className="chip-row">
+          <div className="login-accounts">
             {state.players.map((p) => (
-              <button key={p.id} type="button" className="tap chip" onClick={() => selectPlayer(p.id)}>
+              <button
+                key={p.id}
+                type="button"
+                className="tap login-account"
+                onClick={() => selectPlayer(p.id)}
+              >
                 <Who name={p.name} picture={p.picture} size="sm" />
               </button>
             ))}
           </div>
-        </>
+        </div>
       ) : null}
     </div>
   )

@@ -159,15 +159,16 @@ export async function ensureGisInitialized(): Promise<GoogleId> {
   return id
 }
 
-export async function renderGoogleButton(el: HTMLElement) {
+export async function renderGoogleButton(el: HTMLElement, width = 320) {
   const id = await ensureGisInitialized()
   el.replaceChildren()
   id.renderButton(el, {
     theme: 'outline',
     size: 'large',
-    text: 'signin_with',
+    text: 'continue_with',
     locale: 'he',
-    width: 280,
+    width,
+    shape: 'rectangular',
   })
 }
 
