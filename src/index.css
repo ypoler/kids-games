@@ -634,6 +634,113 @@ html[data-theme='dark'] .pizza-hub {
   margin: 8px auto 20px;
 }
 
+.dance-floor {
+  text-align: center;
+  margin: 0 0 8px;
+}
+
+.dance-cheer {
+  margin: 0 0 8px;
+  font-weight: 700;
+  color: var(--ok);
+  font-size: 22px;
+}
+
+.dancers {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 6px;
+  min-height: 72px;
+}
+
+.dancer {
+  font-size: 44px;
+  line-height: 1;
+  display: inline-block;
+  transform-origin: 50% 85%;
+  will-change: transform;
+}
+
+.dancer-0 {
+  animation: dance-hop 0.55s ease-in-out infinite;
+}
+
+.dancer-1 {
+  animation: dance-wiggle 0.7s ease-in-out infinite;
+  animation-delay: 0.08s;
+}
+
+.dancer-2 {
+  animation: dance-spin 0.85s ease-in-out infinite;
+  animation-delay: 0.12s;
+}
+
+.dancer-3 {
+  animation: dance-hop 0.5s ease-in-out infinite reverse;
+  animation-delay: 0.05s;
+}
+
+.dancer-4 {
+  animation: dance-moon 0.9s ease-in-out infinite;
+  animation-delay: 0.16s;
+}
+
+@keyframes dance-hop {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-10deg);
+  }
+  50% {
+    transform: translateY(-22px) rotate(12deg);
+  }
+}
+
+@keyframes dance-wiggle {
+  0%,
+  100% {
+    transform: rotate(-22deg) scale(1);
+  }
+  50% {
+    transform: rotate(22deg) scale(1.12);
+  }
+}
+
+@keyframes dance-spin {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-8deg) scaleX(1);
+  }
+  35% {
+    transform: translateY(-16px) rotate(16deg) scaleX(-1);
+  }
+  70% {
+    transform: translateY(-4px) rotate(-14deg) scaleX(1);
+  }
+}
+
+@keyframes dance-moon {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(8px) rotate(-18deg);
+  }
+  50% {
+    transform: translateX(0) rotate(10deg);
+  }
+  75% {
+    transform: translateX(-8px) rotate(18deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dancer {
+    animation: none;
+  }
+}
+
 .scoreboard-new {
   margin: 0;
   text-align: center;

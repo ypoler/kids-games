@@ -1,3 +1,4 @@
+import { DanceFloor } from './DanceFloor'
 import { t } from './i18n'
 import { TIMED_MS, TimerRing, starsForTimed } from './TimerRing'
 import type { RoundGoal } from './types'
@@ -72,6 +73,7 @@ export function RecapScore({
     round.type === 'timed' ? `${n} / ${score.asked}` : `${n} / ${round.count}`
   return (
     <div className="scoreboard">
+      <DanceFloor asked={score.asked} correct={score.correct} />
       {isNew ? <p className="scoreboard-new">{t.newBest}</p> : null}
       <div className="scoreboard-row this">
         <span>{t.thisRound}</span>
