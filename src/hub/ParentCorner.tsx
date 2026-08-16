@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useVocabCatalog } from '../games/vocab/VocabCatalog'
 import type { VocabPack } from '../games/vocab/engine'
-import { IconClose } from '../shared/Icons'
+import { IconBack, IconClose } from '../shared/Icons'
 import { t } from '../shared/i18n'
 import { SHEETS_NOT_CONFIGURED } from '../shared/sheets'
 import { useStore } from '../shared/store'
@@ -23,7 +23,23 @@ function packQuery(s: string) {
   return s.trim().toLowerCase()
 }
 
-type Tab = 'general' | 'game'
+type Section =
+  | 'menu'
+  | 'general'
+  | 'multiplication'
+  | 'add-sub'
+  | 'fractions'
+  | 'vocab-mc'
+  | 'vocab-match'
+
+const MENU: { id: Exclude<Section, 'menu'>; emoji: string; label: string }[] = [
+  { id: 'general', emoji: '⚙️', label: t.settingsGeneral },
+  { id: 'multiplication', emoji: '✖️', label: t.multiply },
+  { id: 'add-sub', emoji: '➕', label: t.addSub },
+  { id: 'fractions', emoji: '🍕', label: t.fractions },
+  { id: 'vocab-mc', emoji: '🔤', label: t.vocabMc },
+  { id: 'vocab-match', emoji: '🧩', label: t.vocabMatch },
+]
 
 export function ParentCorner({
   open,
@@ -32,40 +48,71 @@ export function ParentCorner({
   open: boolean
   onClose: () => void
 }) {
-  const [tab, setTab] = useState<Tab>('general')
-  const [gameTab, setGameTab] = useState<
-    'multiplication' | 'add-sub' | 'fractions' | 'vocab-mc' | 'vocab-match'
-  >('multiplication')
+  const [section, setSection] = useState<Section>('menu')
   const { state, updateGeneral, updateGameSettings, resetProgress } = useStore()
+
+  if (!open && section !== 'menu') {
+    setSection('menu')
+  }
   const games = resolvedGames(state)
   const playerId = state.currentPlayerId
   const { packs, ready } = useVocabCatalog()
 
   if (!open) return null
 
+  const current = MENU.find((m) => m.id === section)
+  const title =
+    section === 'menu'
+      ? t.settings
+      : current
+        ? `${current.emoji} ${current.label}`
+        : t.settings
+
+  function close() {
+    setSection('menu')
+    onClose()
+  }
+
   return (
     <div className="sheet" dir="rtl" role="dialog" aria-label={t.settings}>
       <div className="sheet-bar">
-        <h2 className="sheet-title">{t.settings}</h2>
-        <button type="button" className="icon-btn" aria-label={t.close} onClick={onClose}>
+        {section === 'menu' ? (
+          <span className="app-bar-slot" />
+        ) : (
+          <button
+            type="button"
+            className="icon-btn back"
+            aria-label={t.settingsBack}
+            onClick={() => setSection('menu')}
+          >
+            <IconBack />
+          </button>
+        )}
+        <h2 className="sheet-title">{title}</h2>
+        <button type="button" className="icon-btn" aria-label={t.close} onClick={close}>
           <IconClose />
         </button>
       </div>
 
-      <div className="chip-row">
-        {(['general', 'game'] as const).map((id) => (
-          <button
-            key={id}
-            type="button"
-            className={tab === id ? 'tap chip on' : 'tap chip'}
-            onClick={() => setTab(id)}
-          >
-            {id === 'general' ? t.settingsGeneral : t.settingsGame}
-          </button>
-        ))}
-      </div>
+      {section === 'menu' ? (
+        <nav className="settings-nav" aria-label={t.settings}>
+          {MENU.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className="tap settings-nav-item"
+              onClick={() => setSection(item.id)}
+            >
+              <span className="settings-nav-emoji" aria-hidden="true">
+                {item.emoji}
+              </span>
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      ) : null}
 
-      {tab === 'general' ? (
+      {section === 'general' ? (
         <>
           <label className="check">
             <input
@@ -106,91 +153,57 @@ export function ParentCorner({
         </>
       ) : null}
 
-      {tab === 'game' ? (
-        <>
-          <div className="chip-row">
-            <button
-              type="button"
-              className={gameTab === 'multiplication' ? 'tap chip on' : 'tap chip'}
-              onClick={() => setGameTab('multiplication')}
-            >
-              {t.multiply}
-            </button>
-            <button
-              type="button"
-              className={gameTab === 'add-sub' ? 'tap chip on' : 'tap chip'}
-              onClick={() => setGameTab('add-sub')}
-            >
-              {t.addSub}
-            </button>
-            <button
-              type="button"
-              className={gameTab === 'fractions' ? 'tap chip on' : 'tap chip'}
-              onClick={() => setGameTab('fractions')}
-            >
-              {t.fractions}
-            </button>
-            <button
-              type="button"
-              className={gameTab === 'vocab-mc' ? 'tap chip on' : 'tap chip'}
-              onClick={() => setGameTab('vocab-mc')}
-            >
-              {t.vocabMc}
-            </button>
-            <button
-              type="button"
-              className={gameTab === 'vocab-match' ? 'tap chip on' : 'tap chip'}
-              onClick={() => setGameTab('vocab-match')}
-            >
-              {t.vocabMatch}
-            </button>
-          </div>
+      {section === 'multiplication' ? (
+        <MultSettings
+          missing={games.multiplication.missing}
+          tables={games.multiplication.tables}
+          round={games.multiplication.round}
+          onMissing={(missing) => updateGameSettings({ multiplication: { missing } })}
+          onTables={(tables) => updateGameSettings({ multiplication: { tables } })}
+          onRound={(round) => updateGameSettings({ multiplication: { round } })}
+        />
+      ) : null}
 
-          {gameTab === 'multiplication' ? (
-            <MultSettings
-              missing={games.multiplication.missing}
-              tables={games.multiplication.tables}
-              round={games.multiplication.round}
-              onMissing={(missing) => updateGameSettings({ multiplication: { missing } })}
-              onTables={(tables) => updateGameSettings({ multiplication: { tables } })}
-              onRound={(round) => updateGameSettings({ multiplication: { round } })}
-            />
-          ) : gameTab === 'add-sub' ? (
-            <AddSubSettings
-              max={games.addSub.max}
-              round={games.addSub.round}
-              onMax={(max) => updateGameSettings({ addSub: { max } })}
-              onRound={(round) => updateGameSettings({ addSub: { round } })}
-            />
-          ) : gameTab === 'fractions' ? (
-            <FractionsSettings
-              max={games.fractions.max}
-              round={games.fractions.round}
-              onMax={(max) => updateGameSettings({ fractions: { max } })}
-              onRound={(round) => updateGameSettings({ fractions: { round } })}
-            />
-          ) : gameTab === 'vocab-mc' ? (
-            <VocabSettingsPanel
-              packs={packs}
-              loading={!ready}
-              packIds={games.vocabMc.packIds}
-              heToEn={games.vocabMc.heToEn}
-              onPacks={(packIds) => updateGameSettings({ vocabMc: { packIds } })}
-              onHeToEn={(heToEn) => updateGameSettings({ vocabMc: { heToEn } })}
-              round={games.vocabMc.round}
-              onRound={(round) => updateGameSettings({ vocabMc: { round } })}
-            />
-          ) : (
-            <VocabSettingsPanel
-              packs={packs}
-              loading={!ready}
-              packIds={games.vocabMatch.packIds}
-              onPacks={(packIds) => updateGameSettings({ vocabMatch: { packIds } })}
-              round={games.vocabMatch.round}
-              onRound={(round) => updateGameSettings({ vocabMatch: { round } })}
-            />
-          )}
-        </>
+      {section === 'add-sub' ? (
+        <AddSubSettings
+          max={games.addSub.max}
+          round={games.addSub.round}
+          onMax={(max) => updateGameSettings({ addSub: { max } })}
+          onRound={(round) => updateGameSettings({ addSub: { round } })}
+        />
+      ) : null}
+
+      {section === 'fractions' ? (
+        <FractionsSettings
+          max={games.fractions.max}
+          round={games.fractions.round}
+          onMax={(max) => updateGameSettings({ fractions: { max } })}
+          onRound={(round) => updateGameSettings({ fractions: { round } })}
+        />
+      ) : null}
+
+      {section === 'vocab-mc' ? (
+        <VocabSettingsPanel
+          packs={packs}
+          loading={!ready}
+          packIds={games.vocabMc.packIds}
+          heToEn={games.vocabMc.heToEn}
+          onPacks={(packIds) => updateGameSettings({ vocabMc: { packIds } })}
+          onHeToEn={(heToEn) => updateGameSettings({ vocabMc: { heToEn } })}
+          round={games.vocabMc.round}
+          onRound={(round) => updateGameSettings({ vocabMc: { round } })}
+        />
+      ) : null}
+
+      {section === 'vocab-match' ? (
+        <VocabSettingsPanel
+          packs={packs}
+          loading={!ready}
+          packIds={games.vocabMatch.packIds}
+          onPacks={(packIds) => updateGameSettings({ vocabMatch: { packIds } })}
+          round={games.vocabMatch.round}
+          onRound={(round) => updateGameSettings({ vocabMatch: { round } })}
+        />
       ) : null}
     </div>
   )

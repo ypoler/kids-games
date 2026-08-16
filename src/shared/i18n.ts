@@ -38,7 +38,7 @@ export const t = {
   newBest: 'שיא חדש!',
   hiddenTables: 'טבלאות מוסתרות',
   settingsGeneral: 'כללי',
-  settingsGame: 'לכל משחק',
+  settingsBack: 'לתפריט ההגדרות',
   multMode: 'סוג תרגול',
   tablesOn: 'טבלאות פעילות',
   packsHint: 'מהגיליון. בחרו ערכות, או הכל.',
