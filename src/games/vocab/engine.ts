@@ -35,9 +35,43 @@ export function nextWord(
   return top[Math.floor(Math.random() * top.length)]!
 }
 
+export function packIdOf(word: VocabWord) {
+  const i = word.id.indexOf('::')
+  return i === -1 ? word.id : word.id.slice(0, i)
+}
+
+function answerLabel(word: VocabWord, reverse: boolean) {
+  return (reverse ? word.en : word.he).trim().toLowerCase()
+}
+
+function takeDistinct(
+  from: VocabWord[],
+  n: number,
+  reverse: boolean,
+  used: Set<string>,
+): VocabWord[] {
+  const out: VocabWord[] = []
+  for (const w of from) {
+    if (out.length >= n) break
+    const k = answerLabel(w, reverse)
+    if (!k || used.has(k)) continue
+    used.add(k)
+    out.push(w)
+  }
+  return out
+}
+
 export function choices(correct: VocabWord, all: VocabWord[], reverse: boolean): string[] {
-  const others = shuffle(all.filter((w) => w.id !== correct.id)).slice(0, 3)
-  const opts = [correct, ...others].map((w) => (reverse ? w.en : w.he))
+  const pack = packIdOf(correct)
+  const others = all.filter((w) => w.id !== correct.id)
+  const same = shuffle(others.filter((w) => packIdOf(w) === pack))
+  const rest = shuffle(others.filter((w) => packIdOf(w) !== pack))
+  const used = new Set([answerLabel(correct, reverse)])
+  const picked = [
+    ...takeDistinct(same, 3, reverse, used),
+    ...takeDistinct(rest, 3, reverse, used),
+  ].slice(0, 3)
+  const opts = [correct, ...picked].map((w) => (reverse ? w.en : w.he))
   return shuffle(opts)
 }
 
