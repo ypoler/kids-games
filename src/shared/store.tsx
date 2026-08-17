@@ -43,9 +43,10 @@ type Store = {
   updateGeneral: (patch: Partial<GeneralSettings>) => void
   updateGameSettings: (patch: {
     multiplication?: Partial<ChildGameSettings['multiplication']>
-    addSub?: Partial<ChildGameSettings['addSub']>
-    fractions?: Partial<ChildGameSettings['fractions']>
-    vocabMc?: Partial<ChildGameSettings['vocabMc']>
+      addSub?: Partial<ChildGameSettings['addSub']>
+      fractions?: Partial<ChildGameSettings['fractions']>
+      fractionsOf?: Partial<ChildGameSettings['fractionsOf']>
+      vocabMc?: Partial<ChildGameSettings['vocabMc']>
     vocabMatch?: Partial<ChildGameSettings['vocabMatch']>
   }) => void
   resetProgress: (userId: string) => void
@@ -190,6 +191,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       multiplication?: Partial<ChildGameSettings['multiplication']>
       addSub?: Partial<ChildGameSettings['addSub']>
       fractions?: Partial<ChildGameSettings['fractions']>
+      fractionsOf?: Partial<ChildGameSettings['fractionsOf']>
       vocabMc?: Partial<ChildGameSettings['vocabMc']>
       vocabMatch?: Partial<ChildGameSettings['vocabMatch']>
     }) => {
@@ -201,6 +203,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             multiplication: { ...cur.multiplication, ...patch.multiplication },
             addSub: { ...cur.addSub, ...patch.addSub },
             fractions: { ...cur.fractions, ...patch.fractions },
+            fractionsOf: { ...cur.fractionsOf, ...patch.fractionsOf },
             vocabMc: { ...cur.vocabMc, ...patch.vocabMc },
             vocabMatch: { ...cur.vocabMatch, ...patch.vocabMatch },
           },
@@ -362,6 +365,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             },
           }
         }
+        if (game === 'fractions-of') {
+          return {
+            ...s,
+            progress: {
+              ...s.progress,
+              [pid]: {
+                ...cur,
+                fractionsOf: { bests: nextBests },
+              },
+            },
+          }
+        }
         return {
           ...s,
           progress: {
@@ -449,6 +464,7 @@ export function useActiveProfile() {
     multiplication: games.multiplication,
     addSub: games.addSub,
     fractions: games.fractions,
+    fractionsOf: games.fractionsOf,
     vocabMc: games.vocabMc,
     vocabMatch: games.vocabMatch,
   }

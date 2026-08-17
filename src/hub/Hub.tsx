@@ -7,6 +7,7 @@ function lastLabel(last: string) {
   if (last === 'multiplication') return t.multiply
   if (last === 'add-sub') return t.addSub
   if (last === 'fractions') return t.fractions
+  if (last === 'fractions-of') return t.fracOf
   if (last === 'vocab-match') return t.vocabMatch
   return t.vocabMc
 }
@@ -21,7 +22,9 @@ export function Hub() {
         ? '/play/add-sub'
         : last === 'fractions'
           ? '/play/fractions'
-          : last === 'vocab-match'
+          : last === 'fractions-of'
+            ? '/play/fractions-of'
+            : last === 'vocab-match'
           ? '/play/vocab-match'
           : last
             ? '/play/vocab-mc'
@@ -66,6 +69,15 @@ export function Hub() {
           <span className="tile-copy">
             <strong>{t.fractions}</strong>
             <span>{t.fractionsHint}</span>
+          </span>
+        </Link>
+        <Link className="tile tap" to="/play/fractions-of">
+          <span className="tile-emoji" aria-hidden="true">
+            ⚽
+          </span>
+          <span className="tile-copy">
+            <strong>{t.fracOf}</strong>
+            <span>{t.fracOfHint}</span>
           </span>
         </Link>
         <Link className="tile tap" to="/play/vocab-mc">

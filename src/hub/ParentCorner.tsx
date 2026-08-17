@@ -29,6 +29,7 @@ type Section =
   | 'multiplication'
   | 'add-sub'
   | 'fractions'
+  | 'fractions-of'
   | 'vocab-mc'
   | 'vocab-match'
 
@@ -37,6 +38,7 @@ const MENU: { id: Exclude<Section, 'menu'>; emoji: string; label: string }[] = [
   { id: 'multiplication', emoji: '✖️', label: t.multiply },
   { id: 'add-sub', emoji: '➕', label: t.addSub },
   { id: 'fractions', emoji: '🍕', label: t.fractions },
+  { id: 'fractions-of', emoji: '⚽', label: t.fracOf },
   { id: 'vocab-mc', emoji: '🔤', label: t.vocabMc },
   { id: 'vocab-match', emoji: '🧩', label: t.vocabMatch },
 ]
@@ -177,8 +179,19 @@ export function ParentCorner({
         <FractionsSettings
           max={games.fractions.max}
           round={games.fractions.round}
+          maxLabel={t.fracMaxSlices}
           onMax={(max) => updateGameSettings({ fractions: { max } })}
           onRound={(round) => updateGameSettings({ fractions: { round } })}
+        />
+      ) : null}
+
+      {section === 'fractions-of' ? (
+        <FractionsSettings
+          max={games.fractionsOf.max}
+          round={games.fractionsOf.round}
+          maxLabel={t.fracOfMaxDen}
+          onMax={(max) => updateGameSettings({ fractionsOf: { max } })}
+          onRound={(round) => updateGameSettings({ fractionsOf: { round } })}
         />
       ) : null}
 
@@ -243,18 +256,20 @@ function AddSubSettings({
 function FractionsSettings({
   max,
   round,
+  maxLabel,
   onMax,
   onRound,
 }: {
   max: FracMax
   round: RoundGoal
+  maxLabel: string
   onMax: (n: FracMax) => void
   onRound: (r: RoundGoal) => void
 }) {
   return (
     <>
       <RoundPicker round={round} onRound={onRound} />
-      <p className="label">{t.fracMaxSlices}</p>
+      <p className="label">{maxLabel}</p>
       <div className="chip-row">
         {FRAC_MAX_CHOICES.map((n) => (
           <button

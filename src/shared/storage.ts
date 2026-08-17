@@ -21,6 +21,7 @@ function emptyProgress(): ProfileProgress {
     vocabMatch: { bests: defaultBests() },
     addSub: { bests: defaultBests() },
     fractions: { bests: defaultBests() },
+    fractionsOf: { bests: defaultBests() },
     vocab: { words: {} },
   }
 }

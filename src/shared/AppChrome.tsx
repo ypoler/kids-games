@@ -19,6 +19,8 @@ export function AppChrome({ children }: { children: ReactNode }) {
     ? t.multiply
     : loc.pathname.includes('add-sub')
       ? t.addSub
+      : loc.pathname.includes('fractions-of')
+        ? t.fracOf
       : loc.pathname.includes('fractions')
         ? t.fractions
         : loc.pathname.includes('vocab-match')

@@ -4,6 +4,7 @@ import { NameScreen } from './hub/NameScreen'
 import { MultiplicationPage } from './games/multiplication/MultiplicationPage'
 import { AddSubPage } from './games/add-sub/AddSubPage'
 import { FractionsPage } from './games/fractions/FractionsPage'
+import { FractionsOfPage } from './games/fractions-of/FractionsOfPage'
 import { VocabCatalogProvider } from './games/vocab/VocabCatalog'
 import { VocabMatchPage, VocabMcPage } from './games/vocab/VocabPage'
 import { AppChrome } from './shared/AppChrome'
@@ -29,6 +30,7 @@ export default function App() {
               <Route path="/play/multiplication" element={<MultiplicationPage />} />
               <Route path="/play/add-sub" element={<AddSubPage />} />
               <Route path="/play/fractions" element={<FractionsPage />} />
+              <Route path="/play/fractions-of" element={<FractionsOfPage />} />
               <Route path="/play/vocab-mc" element={<VocabMcPage />} />
               <Route path="/play/vocab-match" element={<VocabMatchPage />} />
               <Route path="/play/vocab" element={<Navigate to="/play/vocab-mc" replace />} />
